@@ -36,7 +36,7 @@ public class ConsistentHashingAsyncProcessor<K, V> implements ConsumerOffsetsPro
         try {
           ConsistentHashingAsyncProcessor.this.delegate.process(key, value);
         } catch (Exception e) {
-          LOG.error("Error during process", e);
+          LOG.error("Error while processing: " + key + " = " + value, e);
         }
       }
     });
@@ -52,7 +52,7 @@ public class ConsistentHashingAsyncProcessor<K, V> implements ConsumerOffsetsPro
           try {
             ConsistentHashingAsyncProcessor.this.delegate.close();
           } catch (Exception e) {
-            LOG.error("Error during close", e);
+            LOG.error("Error while closing", e);
           }
         }
       });
@@ -69,7 +69,7 @@ public class ConsistentHashingAsyncProcessor<K, V> implements ConsumerOffsetsPro
           LOG.error("Executor service was shutdown while some tasks were still running");
         }
       } catch (Exception e) {
-        LOG.error("Error during close", e);
+        LOG.error("Error while closing", e);
       }
     }
     LOG.debug("{} executors were shutdown", this.executors.length);

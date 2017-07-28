@@ -23,7 +23,7 @@ public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> 
       try {
         processor.process(key, value);
       } catch (Exception e) {
-        LOG.error("Error during process", e);
+        LOG.error("Error while processing", e);
       }
     }
   }
@@ -35,7 +35,7 @@ public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> 
       try {
         processor.close();
       } catch (Exception e) {
-        LOG.error("Error during close", e);
+        LOG.error("Error while closing", e);
       }
     }
   }

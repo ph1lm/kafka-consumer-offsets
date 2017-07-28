@@ -51,15 +51,17 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
       subscribe();
       while (this.isRunning) {
         try {
-          LOG.debug("Spin start");
+          LOG.debug("Poll start");
           ConsumerRecords<IK, IV> consumerRecords = this.offsetsConsumer.poll(this.pollTimeoutMs);
-          LOG.debug("Spin end (exitIfExhausted is {}): {}", this.exitIfExhausted, consumerRecords.count());
-          process(convert(consumerRecords));
-          if (isTopicExhausted(consumerRecords)) {
+          LOG.debug("Number of records is {}", consumerRecords.count());
+          List<Map.Entry<OK, OV>> convertedRecords = convert(consumerRecords);
+          LOG.debug("Number of records after conversion: {}", convertedRecords.size());
+          process(convertedRecords);
+          if (isTopicExhausted(convertedRecords.size())) {
             break;
           }
         } catch (WakeupException e) {
-          // ignore
+          LOG.debug("Wakeup");
         }
       }
     } catch (Exception e) {
@@ -80,7 +82,7 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
           entries.add(entry);
         }
       } catch (Exception e) {
-        LOG.error("Error during convert", e);
+        LOG.error("Error while converting record: " + consumerRecord, e);
       }
     }
     return entries;
@@ -102,13 +104,13 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
           this.offsetsProcessor.process(entry.getKey(), entry.getValue());
         }
       } catch (Exception e) {
-        LOG.error("Error during process", e);
+        LOG.error("Error while processing entry" + entry, e);
       }
     }
   }
 
-  private boolean isTopicExhausted(ConsumerRecords<IK, IV> records) {
-    return this.exitIfExhausted && records.isEmpty();
+  private boolean isTopicExhausted(int numberOfRecords) {
+    return this.exitIfExhausted && numberOfRecords == 0;
   }
 
   public void stop() {

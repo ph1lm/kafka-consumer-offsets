@@ -19,7 +19,7 @@ public class OffsetsSinkProcessor implements ConsumerOffsetsProcessor<GroupTopic
     @Override
     public void onCompletion(RecordMetadata metadata, Exception exception) {
       if (exception != null) {
-        LOG.error("Error during sink", exception);
+        LOG.error("Error while sinking", exception);
       }
     }
   };

@@ -19,6 +19,7 @@ import java.util.Properties;
 public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTopicPartition, Long> {
 
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsRestoreProcessor.class);
+
   private final Properties properties;
 
   private final ThreadLocal<Map<String, KafkaConsumer<Bytes, Bytes>>> consumersCache
@@ -55,7 +56,7 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
       List<TopicPartition> topicPartitions = Collections.singletonList(topicPartition);
       kafkaConsumer.assign(topicPartitions);
       kafkaConsumer.seekToEnd(topicPartitions);
-      // may stuck on non-existent partitions
+      // may stick in 'position' call in a case of non-existent partitions
       // see https://issues.apache.org/jira/browse/KAFKA-3177
       long maxOffset = kafkaConsumer.position(topicPartition);
       this.maxOffsetsCache.get().put(groupTopicPartition, maxOffset);
@@ -89,7 +90,7 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
       try {
         kafkaConsumer.close();
       } catch (Exception e) {
-        LOG.error("Error during close", e);
+        LOG.error("Error while closing", e);
       }
     }
   }

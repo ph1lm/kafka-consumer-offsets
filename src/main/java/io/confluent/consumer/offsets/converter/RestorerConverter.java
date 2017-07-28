@@ -10,12 +10,14 @@ import java.util.Map;
 public class RestorerConverter
     implements ConsumerOffsetsConverter<String, String, GroupTopicPartition, Long> {
 
+  private static final String KEY_SPLIT = "/";
+
   @Override
   public Map.Entry<GroupTopicPartition, Long> apply(ConsumerRecord<String, String> consumerRecord) {
     String key = consumerRecord.key();
     String value = consumerRecord.value();
 
-    String[] split = key.split("/");
+    String[] split = key.split(KEY_SPLIT);
     if (split.length != 3) {
       return null;
     }
