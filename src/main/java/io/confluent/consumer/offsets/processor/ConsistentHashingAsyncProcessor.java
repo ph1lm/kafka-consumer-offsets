@@ -72,6 +72,12 @@ public class ConsistentHashingAsyncProcessor<K, V> implements ConsumerOffsetsPro
         LOG.error("Error while closing", e);
       }
     }
-    LOG.debug("{} executors were shutdown", this.executors.length);
+    int unfinishedTasks = 0;
+    for (ExecutorService executor : this.executors) {
+      unfinishedTasks += executor.shutdownNow().size();
+    }
+    if (unfinishedTasks > 0) {
+      LOG.error("{} executors were shutdown with {} unfinished tasks", this.executors.length, unfinishedTasks);
+    }
   }
 }

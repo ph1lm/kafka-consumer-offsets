@@ -3,6 +3,7 @@ package io.confluent.consumer.offsets.processor;
 import kafka.coordinator.GroupTopicPartition;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.utils.Bytes;
@@ -53,19 +54,33 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
 
     TopicPartition topicPartition = groupTopicPartition.topicPartition();
     if (!kafkaConsumer.assignment().contains(topicPartition)) {
-      List<TopicPartition> topicPartitions = Collections.singletonList(topicPartition);
-      kafkaConsumer.assign(topicPartitions);
-      kafkaConsumer.seekToEnd(topicPartitions);
-      // may stick in 'position' call in a case of non-existent partitions
-      // see https://issues.apache.org/jira/browse/KAFKA-3177
-      long maxOffset = kafkaConsumer.position(topicPartition);
-      this.maxOffsetsCache.get().put(groupTopicPartition, maxOffset);
+      boolean topicPartitionExist = isTopicPartitionExist(topicPartition,
+          kafkaConsumer.partitionsFor(topicPartition.topic()));
+      if (topicPartitionExist) {
+        List<TopicPartition> topicPartitions = Collections.singletonList(topicPartition);
+        kafkaConsumer.assign(topicPartitions);
+        Map<TopicPartition, Long> topicPartitionOffsets = kafkaConsumer.endOffsets(topicPartitions);
+        long maxOffset = topicPartitionOffsets.get(topicPartition);
+        this.maxOffsetsCache.get().put(groupTopicPartition, maxOffset);
+      } else {
+        LOG.warn("Non-existent topic/partition: {} - {}", topicPartition, offset);
+        return;
+      }
     }
 
     long maxOffset = this.maxOffsetsCache.get().get(groupTopicPartition);
     kafkaConsumer.seek(topicPartition, offset > maxOffset ? maxOffset : offset);
     kafkaConsumer.commitSync();
     LOG.debug("Offset was set: {} - {}", topicPartition, offset);
+  }
+
+  private boolean isTopicPartitionExist(TopicPartition topicPartition, List<PartitionInfo> partitionInfos) {
+    for (PartitionInfo partitionInfo : partitionInfos) {
+      if (partitionInfo.partition() == topicPartition.partition()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private KafkaConsumer<Bytes, Bytes> createKafkaConsumerForGroup(String group) {
