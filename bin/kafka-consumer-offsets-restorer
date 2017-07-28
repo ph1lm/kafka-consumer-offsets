@@ -1,0 +1,7 @@
+#!/bin/bash
+
+base_dir=$(dirname $0)/..
+
+export CLASSPATH=$CLASSPATH:$base_dir/share/java/kafka-consumer-offsets/*
+
+exec $(dirname $0)/kafka-run-class io.confluent.consumer.offsets.ConsumerOffsetsRestorer "$@"
