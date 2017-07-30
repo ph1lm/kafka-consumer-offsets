@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
 
@@ -60,24 +59,6 @@ public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
     LOG.debug("Shutdown {} executors", this.executors.length);
     for (ExecutorService executor : this.executors) {
       executor.shutdown();
-    }
-    LOG.debug("Await termination for {} executors", this.executors.length);
-    for (ExecutorService executor : this.executors) {
-      try {
-        boolean success = executor.awaitTermination(30, TimeUnit.SECONDS);
-        if (!success) {
-          LOG.error("Executor service was shutdown while some tasks were still running");
-        }
-      } catch (Exception e) {
-        LOG.error("Error while closing", e);
-      }
-    }
-    int unfinishedTasks = 0;
-    for (ExecutorService executor : this.executors) {
-      unfinishedTasks += executor.shutdownNow().size();
-    }
-    if (unfinishedTasks > 0) {
-      LOG.error("{} executors were shutdown with {} unfinished tasks", this.executors.length, unfinishedTasks);
     }
   }
 }
