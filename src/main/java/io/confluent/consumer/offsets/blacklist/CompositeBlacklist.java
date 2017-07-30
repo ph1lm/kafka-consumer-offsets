@@ -4,17 +4,17 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class CompositeBlacklist<K, V> implements ConsumerOffsetsBlacklist<K, V> {
+public class CompositeBlacklist<K, V> implements Blacklist<K, V> {
 
-  private final List<ConsumerOffsetsBlacklist<K, V>> blacklists;
+  private final List<Blacklist<K, V>> blacklists;
 
-  private CompositeBlacklist(List<ConsumerOffsetsBlacklist<K, V>> blacklists) {
+  private CompositeBlacklist(List<Blacklist<K, V>> blacklists) {
     this.blacklists = blacklists;
   }
 
   @Override
   public boolean shouldIgnore(K key, V value) {
-    for (ConsumerOffsetsBlacklist<K, V> blacklist : this.blacklists) {
+    for (Blacklist<K, V> blacklist : this.blacklists) {
       if (blacklist.shouldIgnore(key, value)) {
         return true;
       }
@@ -24,14 +24,14 @@ public class CompositeBlacklist<K, V> implements ConsumerOffsetsBlacklist<K, V> 
 
   public static class Builder<K, V> {
 
-    private final List<ConsumerOffsetsBlacklist<K, V>> blacklists = new LinkedList<>();
+    private final List<Blacklist<K, V>> blacklists = new LinkedList<>();
 
-    public Builder<K, V> ignore(ConsumerOffsetsBlacklist<K, V> blacklist) {
+    public Builder<K, V> ignore(Blacklist<K, V> blacklist) {
       this.blacklists.add(blacklist);
       return this;
     }
 
-    public ConsumerOffsetsBlacklist<K, V> build() {
+    public Blacklist<K, V> build() {
       return new CompositeBlacklist<>(Collections.unmodifiableList(this.blacklists));
     }
   }

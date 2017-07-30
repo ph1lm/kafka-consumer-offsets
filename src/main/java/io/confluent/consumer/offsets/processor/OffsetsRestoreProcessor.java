@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTopicPartition, Long> {
+public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, Long> {
 
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsRestoreProcessor.class);
 
@@ -96,7 +96,7 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
     }
   }
 
-  public static class Builder implements ProcessorBuilder<ConsumerOffsetsProcessor<GroupTopicPartition, Long>> {
+  public static class Builder implements ProcessorBuilder<GroupTopicPartition, Long> {
 
     private Properties properties;
 

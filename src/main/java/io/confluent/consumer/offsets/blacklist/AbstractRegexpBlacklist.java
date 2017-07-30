@@ -2,7 +2,7 @@ package io.confluent.consumer.offsets.blacklist;
 
 import java.util.regex.Pattern;
 
-public abstract class AbstractRegexpBlacklist<K, V> implements ConsumerOffsetsBlacklist<K, V> {
+public abstract class AbstractRegexpBlacklist<K, V> implements Blacklist<K, V> {
 
   private final Pattern pattern;
 

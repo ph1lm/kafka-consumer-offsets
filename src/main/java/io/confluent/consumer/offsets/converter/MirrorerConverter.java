@@ -15,7 +15,7 @@ import static kafka.coordinator.GroupMetadataManager.readMessageKey;
 import static kafka.coordinator.GroupMetadataManager.readOffsetMessageValue;
 
 public class MirrorerConverter
-    implements ConsumerOffsetsConverter<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> {
+    implements Converter<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> {
 
   @Override
   public Map.Entry<GroupTopicPartition, OffsetAndMetadata> apply(ConsumerRecord<Bytes, Bytes> consumerRecord) {

@@ -1,13 +1,13 @@
 package io.confluent.consumer.offsets.processor;
 
-public class ThreadLocalProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> {
+public class ThreadLocalProcessor<K, V> implements Processor<K, V> {
 
-  private final ThreadLocal<ConsumerOffsetsProcessor<K, V>> threadLocalDelegate;
+  private final ThreadLocal<Processor<K, V>> threadLocalDelegate;
 
-  public ThreadLocalProcessor(final ProcessorBuilder<ConsumerOffsetsProcessor<K, V>> builder) {
-    this.threadLocalDelegate = new ThreadLocal<ConsumerOffsetsProcessor<K, V>>() {
+  public ThreadLocalProcessor(final ProcessorBuilder<K, V> builder) {
+    this.threadLocalDelegate = new ThreadLocal<Processor<K, V>>() {
       @Override
-      protected ConsumerOffsetsProcessor<K, V> initialValue() {
+      protected Processor<K, V> initialValue() {
         return builder.build();
       }
     };

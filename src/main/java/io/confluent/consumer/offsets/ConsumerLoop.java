@@ -1,8 +1,8 @@
 package io.confluent.consumer.offsets;
 
-import io.confluent.consumer.offsets.blacklist.ConsumerOffsetsBlacklist;
-import io.confluent.consumer.offsets.converter.ConsumerOffsetsConverter;
-import io.confluent.consumer.offsets.processor.ConsumerOffsetsProcessor;
+import io.confluent.consumer.offsets.blacklist.Blacklist;
+import io.confluent.consumer.offsets.converter.Converter;
+import io.confluent.consumer.offsets.processor.Processor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -16,29 +16,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
+public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ConsumerOffsetsLoop.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ConsumerLoop.class);
 
-  private final KafkaConsumer<IK, IV> offsetsConsumer;
-  private final ConsumerOffsetsProcessor<OK, OV> offsetsProcessor;
-  private final ConsumerOffsetsBlacklist<OK, OV> offsetsBlacklist;
-  private final ConsumerOffsetsConverter<IK, IV, OK, OV> offsetsConverter;
+  private final KafkaConsumer<IK, IV> consumer;
+  private final Processor<OK, OV> processor;
+  private final Blacklist<OK, OV> blacklist;
+  private final Converter<IK, IV, OK, OV> converter;
   private final String topic;
   private final boolean fromBeginning;
   private final long pollTimeoutMs;
   private final boolean exitIfExhausted;
   private volatile boolean isRunning = true;
 
-  public ConsumerOffsetsLoop(Properties properties,
-                             ConsumerOffsetsProcessor<OK, OV> offsetsProcessor,
-                             ConsumerOffsetsBlacklist<OK, OV> offsetsBlacklist,
-                             ConsumerOffsetsConverter<IK, IV, OK, OV> offsetsConverter,
-                             String topic, boolean fromBeginning, long pollTimeoutMs, boolean exitIfExhausted) {
-    this.offsetsConsumer = new KafkaConsumer<>(properties);
-    this.offsetsProcessor = offsetsProcessor;
-    this.offsetsBlacklist = offsetsBlacklist;
-    this.offsetsConverter = offsetsConverter;
+  public ConsumerLoop(Properties properties, Processor<OK, OV> processor, Blacklist<OK, OV> blacklist,
+                      Converter<IK, IV, OK, OV> converter, String topic, boolean fromBeginning, long pollTimeoutMs,
+                      boolean exitIfExhausted) {
+    this.consumer = new KafkaConsumer<>(properties);
+    this.processor = processor;
+    this.blacklist = blacklist;
+    this.converter = converter;
     this.topic = topic;
     this.fromBeginning = fromBeginning;
     this.pollTimeoutMs = pollTimeoutMs;
@@ -52,7 +50,7 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
       while (this.isRunning) {
         try {
           LOG.debug("Poll start");
-          ConsumerRecords<IK, IV> consumerRecords = this.offsetsConsumer.poll(this.pollTimeoutMs);
+          ConsumerRecords<IK, IV> consumerRecords = this.consumer.poll(this.pollTimeoutMs);
           if (isTopicExhausted(consumerRecords.count())) {
             break;
           }
@@ -67,8 +65,8 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
     } catch (Exception e) {
       LOG.error("Error in main loop", e);
     } finally {
-      this.offsetsConsumer.close();
-      this.offsetsProcessor.close();
+      this.consumer.close();
+      this.processor.close();
     }
   }
 
@@ -77,7 +75,7 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
     List<Map.Entry<OK, OV>> entries = new ArrayList<>(consumerRecords.count());
     for (ConsumerRecord<IK, IV> consumerRecord : consumerRecords) {
       try {
-        Map.Entry<OK, OV> entry = this.offsetsConverter.apply(consumerRecord);
+        Map.Entry<OK, OV> entry = this.converter.apply(consumerRecord);
         if (entry != null) {
           entries.add(entry);
         }
@@ -89,11 +87,11 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
   }
 
   private void subscribe() {
-    this.offsetsConsumer.subscribe(Collections.singletonList(this.topic));
+    this.consumer.subscribe(Collections.singletonList(this.topic));
     if (this.fromBeginning) {
       // initial poll to get list of assignments which is calculated lazily
-      this.offsetsConsumer.poll(1000);
-      this.offsetsConsumer.seekToBeginning(this.offsetsConsumer.assignment());
+      this.consumer.poll(1000);
+      this.consumer.seekToBeginning(this.consumer.assignment());
     }
   }
 
@@ -101,10 +99,10 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
     int ignored = 0;
     for (Map.Entry<OK, OV> entry : entries) {
       try {
-        if (this.offsetsBlacklist.shouldIgnore(entry.getKey(), entry.getValue())) {
+        if (this.blacklist.shouldIgnore(entry.getKey(), entry.getValue())) {
           ignored++;
         } else {
-          this.offsetsProcessor.process(entry.getKey(), entry.getValue());
+          this.processor.process(entry.getKey(), entry.getValue());
         }
       } catch (Exception e) {
         LOG.error("Error while processing entry" + entry, e);
@@ -119,6 +117,6 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
 
   public void stop() {
     this.isRunning = false;
-    this.offsetsConsumer.wakeup();
+    this.consumer.wakeup();
   }
 }

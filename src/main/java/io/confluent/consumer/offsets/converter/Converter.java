@@ -5,5 +5,5 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.util.Map;
 
-public interface ConsumerOffsetsConverter<IK, IV, OK, OV> extends Function<ConsumerRecord<IK, IV>, Map.Entry<OK, OV>> {
+public interface Converter<IK, IV, OK, OV> extends Function<ConsumerRecord<IK, IV>, Map.Entry<OK, OV>> {
 }

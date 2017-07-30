@@ -1,14 +1,14 @@
 package io.confluent.consumer.offsets;
 
 import io.confluent.consumer.offsets.blacklist.CompositeBlacklist;
-import io.confluent.consumer.offsets.blacklist.ConsumerOffsetsBlacklist;
+import io.confluent.consumer.offsets.blacklist.Blacklist;
 import io.confluent.consumer.offsets.blacklist.GroupRegexpBlacklist;
 import io.confluent.consumer.offsets.blacklist.TopicRegexpBlacklist;
-import io.confluent.consumer.offsets.converter.ConsumerOffsetsConverter;
+import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.converter.MirrorerConverter;
 import io.confluent.consumer.offsets.function.IdentityFunction;
 import io.confluent.consumer.offsets.processor.ConsistentHashingAsyncProcessor;
-import io.confluent.consumer.offsets.processor.ConsumerOffsetsProcessor;
+import io.confluent.consumer.offsets.processor.Processor;
 import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
 import io.confluent.consumer.offsets.processor.OffsetsSinkProcessor;
@@ -89,7 +89,7 @@ public class ConsumerOffsetsMirrorer {
       producerProperties.load(reader);
     }
 
-    ConsumerOffsetsProcessor<GroupTopicPartition, OffsetAndMetadata> offsetsProcessor
+    Processor<GroupTopicPartition, OffsetAndMetadata> processor
         = new CompositeProcessor.Builder<GroupTopicPartition, OffsetAndMetadata>()
             .process(new LoggingProcessor<GroupTopicPartition, OffsetAndMetadata>())
             .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
@@ -99,7 +99,7 @@ public class ConsumerOffsetsMirrorer {
                     .withTopic(options.valueOf(targetTopic)))))
             .build();
 
-    ConsumerOffsetsBlacklist<GroupTopicPartition, OffsetAndMetadata> offsetsBlacklist
+    Blacklist<GroupTopicPartition, OffsetAndMetadata> blacklist
         = new CompositeBlacklist.Builder<GroupTopicPartition, OffsetAndMetadata>()
           .ignore(new GroupRegexpBlacklist("kafka-consumers-offsets.*"))
           .ignore(new GroupRegexpBlacklist("kafka-consumer-offsets.*"))
@@ -107,21 +107,21 @@ public class ConsumerOffsetsMirrorer {
           .ignore(new TopicRegexpBlacklist("_.*"))
           .build();
 
-    ConsumerOffsetsConverter<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> offsetsConverter =
+    Converter<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> converter =
         new MirrorerConverter();
 
-    final ConsumerOffsetsLoop<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> consumerOffsetsLoop =
-        new ConsumerOffsetsLoop<>(consumerProperties, offsetsProcessor, offsetsBlacklist, offsetsConverter,
+    final ConsumerLoop<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> consumerLoop =
+        new ConsumerLoop<>(consumerProperties, processor, blacklist, converter,
             options.valueOf(sourceTopic), options.has(fromBeginning), options.valueOf(pollTimeoutMs), false);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
-        consumerOffsetsLoop.stop();
+        consumerLoop.stop();
       }
     });
 
-    Thread thread = new Thread(consumerOffsetsLoop);
+    Thread thread = new Thread(consumerLoop);
     thread.start();
     thread.join();
   }

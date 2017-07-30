@@ -1,12 +1,12 @@
 package io.confluent.consumer.offsets;
 
 import io.confluent.consumer.offsets.blacklist.CompositeBlacklist;
-import io.confluent.consumer.offsets.blacklist.ConsumerOffsetsBlacklist;
+import io.confluent.consumer.offsets.blacklist.Blacklist;
 import io.confluent.consumer.offsets.blacklist.IgnoreNothingBlacklist;
-import io.confluent.consumer.offsets.converter.ConsumerOffsetsConverter;
+import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.converter.IdentityConverter;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
-import io.confluent.consumer.offsets.processor.ConsumerOffsetsProcessor;
+import io.confluent.consumer.offsets.processor.Processor;
 import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -27,30 +27,30 @@ public class TestConsumer {
     properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
     properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-    ConsumerOffsetsProcessor<String, String> offsetsProcessor
+    Processor<String, String> processor
         = new CompositeProcessor.Builder<String, String>()
         .process(new LoggingProcessor<String, String>())
         .build();
 
-    ConsumerOffsetsBlacklist<String, String> offsetsBlacklist
+    Blacklist<String, String> blacklist
         = new CompositeBlacklist.Builder<String, String>()
         .ignore(new IgnoreNothingBlacklist<String, String>())
         .build();
 
-    ConsumerOffsetsConverter<String, String, String, String> offsetsConverter = new IdentityConverter<>();
+    Converter<String, String, String, String> converter = new IdentityConverter<>();
 
-    final ConsumerOffsetsLoop<String, String, String, String> consumerOffsetsLoop = new ConsumerOffsetsLoop<>(
-        properties, offsetsProcessor, offsetsBlacklist, offsetsConverter, topic, false, Integer.MAX_VALUE,
+    final ConsumerLoop<String, String, String, String> consumerLoop = new ConsumerLoop<>(
+        properties, processor, blacklist, converter, topic, false, Integer.MAX_VALUE,
         false);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
-        consumerOffsetsLoop.stop();
+        consumerLoop.stop();
       }
     });
 
-    Thread thread = new Thread(consumerOffsetsLoop);
+    Thread thread = new Thread(consumerLoop);
     thread.start();
     thread.join();
   }

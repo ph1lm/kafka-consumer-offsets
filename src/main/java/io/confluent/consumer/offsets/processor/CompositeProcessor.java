@@ -7,19 +7,19 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> {
+public class CompositeProcessor<K, V> implements Processor<K, V> {
 
   private static final Logger LOG = LoggerFactory.getLogger(CompositeProcessor.class);
 
-  private final List<ConsumerOffsetsProcessor<K, V>> processors;
+  private final List<Processor<K, V>> processors;
 
-  private CompositeProcessor(List<ConsumerOffsetsProcessor<K, V>> processors) {
+  private CompositeProcessor(List<Processor<K, V>> processors) {
     this.processors = processors;
   }
 
   @Override
   public void process(K key, V value) {
-    for (ConsumerOffsetsProcessor<K, V> processor : this.processors) {
+    for (Processor<K, V> processor : this.processors) {
       try {
         processor.process(key, value);
       } catch (Exception e) {
@@ -31,7 +31,7 @@ public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> 
   @Override
   public void close() {
     LOG.trace("Closing {} processors", this.processors.size());
-    for (ConsumerOffsetsProcessor<K, V> processor : this.processors) {
+    for (Processor<K, V> processor : this.processors) {
       try {
         processor.close();
       } catch (Exception e) {
@@ -40,18 +40,17 @@ public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> 
     }
   }
 
-  public static class Builder<K, V> implements
-      ProcessorBuilder<ConsumerOffsetsProcessor<K, V>> {
+  public static class Builder<K, V> implements ProcessorBuilder<K, V> {
 
-    private final List<ConsumerOffsetsProcessor<K, V>> processors = new LinkedList<>();
+    private final List<Processor<K, V>> processors = new LinkedList<>();
 
-    public Builder<K, V> process(ConsumerOffsetsProcessor<K, V> processor) {
+    public Builder<K, V> process(Processor<K, V> processor) {
       this.processors.add(processor);
       return this;
     }
 
     @Override
-    public ConsumerOffsetsProcessor<K, V> build() {
+    public Processor<K, V> build() {
       return new CompositeProcessor<>(Collections.unmodifiableList(this.processors));
     }
   }

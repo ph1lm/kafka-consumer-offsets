@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class OffsetsSinkProcessor implements ConsumerOffsetsProcessor<GroupTopicPartition, OffsetAndMetadata> {
+public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, OffsetAndMetadata> {
 
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsSinkProcessor.class);
   private static final String OFFSET_KEY_FORMAT = "%s/%s/%d";
@@ -26,17 +26,17 @@ public class OffsetsSinkProcessor implements ConsumerOffsetsProcessor<GroupTopic
 
   private final Properties properties;
   private final String topic;
-  private final KafkaProducer<String, String> offsetsProducer;
+  private final KafkaProducer<String, String> producer;
 
   public OffsetsSinkProcessor(Properties properties, String topic) {
     this.properties = properties;
     this.topic = topic;
-    this.offsetsProducer = new KafkaProducer<>(OffsetsSinkProcessor.this.properties);
+    this.producer = new KafkaProducer<>(OffsetsSinkProcessor.this.properties);
   }
 
   @Override
   public void process(GroupTopicPartition groupTopicPartition, OffsetAndMetadata offsetAndMetadata) {
-    this.offsetsProducer.send(new ProducerRecord<>(this.topic,
+    this.producer.send(new ProducerRecord<>(this.topic,
             String.format(OFFSET_KEY_FORMAT,
                 groupTopicPartition.group(),
                 groupTopicPartition.topicPartition().topic(),
@@ -47,12 +47,11 @@ public class OffsetsSinkProcessor implements ConsumerOffsetsProcessor<GroupTopic
 
   public void close() {
     LOG.debug("Closing producer");
-    this.offsetsProducer.flush();
-    this.offsetsProducer.close();
+    this.producer.flush();
+    this.producer.close();
   }
 
-  public static class Builder implements
-      ProcessorBuilder<ConsumerOffsetsProcessor<GroupTopicPartition, OffsetAndMetadata>> {
+  public static class Builder implements ProcessorBuilder<GroupTopicPartition, OffsetAndMetadata> {
 
     private Properties properties;
     private String topic;

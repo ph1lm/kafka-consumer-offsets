@@ -8,16 +8,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class ConsistentHashingAsyncProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> {
+public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ConsistentHashingAsyncProcessor.class);
 
-  private final ConsumerOffsetsProcessor<K, V> delegate;
+  private final Processor<K, V> delegate;
   private final Function<K, ?> converter;
   private final ExecutorService[] executors;
 
   public ConsistentHashingAsyncProcessor(int numberOfThreads, Function<K, ?> converter,
-                                         ConsumerOffsetsProcessor<K, V> delegate) {
+                                         Processor<K, V> delegate) {
     this.delegate = delegate;
     this.converter = converter;
     this.executors = new ExecutorService[numberOfThreads];

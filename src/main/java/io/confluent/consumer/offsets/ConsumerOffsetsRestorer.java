@@ -1,11 +1,11 @@
 package io.confluent.consumer.offsets;
 
 import io.confluent.consumer.offsets.blacklist.IgnoreNothingBlacklist;
-import io.confluent.consumer.offsets.converter.ConsumerOffsetsConverter;
+import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.converter.RestorerConverter;
 import io.confluent.consumer.offsets.function.GroupNameFunction;
 import io.confluent.consumer.offsets.processor.ConsistentHashingAsyncProcessor;
-import io.confluent.consumer.offsets.processor.ConsumerOffsetsProcessor;
+import io.confluent.consumer.offsets.processor.Processor;
 import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
 import io.confluent.consumer.offsets.processor.OffsetsRestoreProcessor;
@@ -67,7 +67,7 @@ public class ConsumerOffsetsRestorer {
       consumerProperties.load(reader);
     }
 
-    ConsumerOffsetsProcessor<GroupTopicPartition, Long> offsetsProcessor
+    Processor<GroupTopicPartition, Long> processor
         = new CompositeProcessor.Builder<GroupTopicPartition, Long>()
           .process(new LoggingProcessor<GroupTopicPartition, Long>())
           .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
@@ -75,21 +75,21 @@ public class ConsumerOffsetsRestorer {
               new OffsetsRestoreProcessor.Builder().withProperties(consumerProperties))))
           .build();
 
-    ConsumerOffsetsConverter<String, String, GroupTopicPartition, Long> restorerConverter = new RestorerConverter();
+    Converter<String, String, GroupTopicPartition, Long> restorerConverter = new RestorerConverter();
 
-    final ConsumerOffsetsLoop<String, String, GroupTopicPartition, Long> consumerOffsetsLoop =
-        new ConsumerOffsetsLoop<>(consumerProperties, offsetsProcessor,
+    final ConsumerLoop<String, String, GroupTopicPartition, Long> consumerLoop =
+        new ConsumerLoop<>(consumerProperties, processor,
             new IgnoreNothingBlacklist<GroupTopicPartition, Long>(), restorerConverter, options.valueOf(sourceTopic),
             options.has(fromBeginning), options.valueOf(pollTimeoutMs), true);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
-        consumerOffsetsLoop.stop();
+        consumerLoop.stop();
       }
     });
 
-    Thread thread = new Thread(consumerOffsetsLoop);
+    Thread thread = new Thread(consumerLoop);
     thread.start();
     thread.join();
   }

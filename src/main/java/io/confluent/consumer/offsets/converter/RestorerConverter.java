@@ -8,7 +8,7 @@ import java.util.AbstractMap;
 import java.util.Map;
 
 public class RestorerConverter
-    implements ConsumerOffsetsConverter<String, String, GroupTopicPartition, Long> {
+    implements Converter<String, String, GroupTopicPartition, Long> {
 
   private static final String KEY_SPLIT = "/";
 
