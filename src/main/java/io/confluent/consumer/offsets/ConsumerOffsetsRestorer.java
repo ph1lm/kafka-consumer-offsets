@@ -9,6 +9,7 @@ import io.confluent.consumer.offsets.processor.ConsumerOffsetsProcessor;
 import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
 import io.confluent.consumer.offsets.processor.OffsetsRestoreProcessor;
+import io.confluent.consumer.offsets.processor.ThreadLocalProcessor;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -70,8 +71,9 @@ public class ConsumerOffsetsRestorer {
         = new CompositeProcessor.Builder<GroupTopicPartition, Long>()
           .process(new LoggingProcessor<GroupTopicPartition, Long>())
           .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
-              new GroupNameFunction(), new OffsetsRestoreProcessor(consumerProperties)))
-        .build();
+              new GroupNameFunction(), new ThreadLocalProcessor<>(
+              new OffsetsRestoreProcessor.Builder().withProperties(consumerProperties))))
+          .build();
 
     ConsumerOffsetsConverter<String, String, GroupTopicPartition, Long> restorerConverter = new RestorerConverter();
 

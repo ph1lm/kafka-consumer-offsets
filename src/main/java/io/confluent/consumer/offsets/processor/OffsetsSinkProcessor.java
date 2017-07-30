@@ -26,22 +26,17 @@ public class OffsetsSinkProcessor implements ConsumerOffsetsProcessor<GroupTopic
 
   private final Properties properties;
   private final String topic;
-  private final ThreadLocal<KafkaProducer<String, String>> offsetsProducer;
+  private final KafkaProducer<String, String> offsetsProducer;
 
   public OffsetsSinkProcessor(Properties properties, String topic) {
     this.properties = properties;
     this.topic = topic;
-    this.offsetsProducer = new ThreadLocal<KafkaProducer<String, String>>() {
-      @Override
-      protected KafkaProducer<String, String> initialValue() {
-        return new KafkaProducer<>(OffsetsSinkProcessor.this.properties);
-      }
-    };
+    this.offsetsProducer = new KafkaProducer<>(OffsetsSinkProcessor.this.properties);
   }
 
   @Override
   public void process(GroupTopicPartition groupTopicPartition, OffsetAndMetadata offsetAndMetadata) {
-    this.offsetsProducer.get().send(new ProducerRecord<>(this.topic,
+    this.offsetsProducer.send(new ProducerRecord<>(this.topic,
             String.format(OFFSET_KEY_FORMAT,
                 groupTopicPartition.group(),
                 groupTopicPartition.topicPartition().topic(),
@@ -52,7 +47,30 @@ public class OffsetsSinkProcessor implements ConsumerOffsetsProcessor<GroupTopic
 
   public void close() {
     LOG.debug("Closing producer");
-    this.offsetsProducer.get().flush();
-    this.offsetsProducer.get().close();
+    this.offsetsProducer.flush();
+    this.offsetsProducer.close();
+  }
+
+  public static class Builder implements
+      ProcessorBuilder<ConsumerOffsetsProcessor<GroupTopicPartition, OffsetAndMetadata>> {
+
+    private Properties properties;
+    private String topic;
+
+    public Builder withProperties(Properties properties) {
+      this.properties = properties;
+      return this;
+    }
+
+    public Builder withTopic(String topic) {
+      this.topic = topic;
+      return this;
+    }
+
+
+    @Override
+    public OffsetsSinkProcessor build() {
+      return new OffsetsSinkProcessor(this.properties, this.topic);
+    }
   }
 }

@@ -40,7 +40,8 @@ public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> 
     }
   }
 
-  public static class Builder<K, V> {
+  public static class Builder<K, V> implements
+      ProcessorBuilder<ConsumerOffsetsProcessor<K, V>> {
 
     private final List<ConsumerOffsetsProcessor<K, V>> processors = new LinkedList<>();
 
@@ -49,6 +50,7 @@ public class CompositeProcessor<K, V> implements ConsumerOffsetsProcessor<K, V> 
       return this;
     }
 
+    @Override
     public ConsumerOffsetsProcessor<K, V> build() {
       return new CompositeProcessor<>(Collections.unmodifiableList(this.processors));
     }

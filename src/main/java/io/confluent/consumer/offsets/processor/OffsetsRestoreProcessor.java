@@ -22,22 +22,8 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsRestoreProcessor.class);
 
   private final Properties properties;
-
-  private final ThreadLocal<Map<String, KafkaConsumer<Bytes, Bytes>>> consumersCache
-      = new ThreadLocal<Map<String, KafkaConsumer<Bytes, Bytes>>>() {
-          @Override
-          protected Map<String, KafkaConsumer<Bytes, Bytes>> initialValue() {
-            return new HashMap<>();
-          }
-        };
-
-  private final ThreadLocal<Map<GroupTopicPartition, Long>> maxOffsetsCache
-      = new ThreadLocal<Map<GroupTopicPartition, Long>>() {
-        @Override
-        protected Map<GroupTopicPartition, Long> initialValue() {
-          return new HashMap<>();
-        }
-      };
+  private final Map<String, KafkaConsumer<Bytes, Bytes>> consumersCache = new HashMap<>();
+  private final Map<GroupTopicPartition, Long> maxOffsetsCache = new HashMap<>();
 
   public OffsetsRestoreProcessor(Properties properties) {
     this.properties = properties;
@@ -46,10 +32,10 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
   @Override
   public void process(GroupTopicPartition groupTopicPartition, Long offset) {
     String group = groupTopicPartition.group();
-    KafkaConsumer<Bytes, Bytes> kafkaConsumer = this.consumersCache.get().get(group);
+    KafkaConsumer<Bytes, Bytes> kafkaConsumer = this.consumersCache.get(group);
     if (kafkaConsumer == null) {
       kafkaConsumer = createKafkaConsumerForGroup(group);
-      this.consumersCache.get().put(group, kafkaConsumer);
+      this.consumersCache.put(group, kafkaConsumer);
     }
 
     TopicPartition topicPartition = groupTopicPartition.topicPartition();
@@ -61,14 +47,14 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
         kafkaConsumer.assign(topicPartitions);
         Map<TopicPartition, Long> topicPartitionOffsets = kafkaConsumer.endOffsets(topicPartitions);
         long maxOffset = topicPartitionOffsets.get(topicPartition);
-        this.maxOffsetsCache.get().put(groupTopicPartition, maxOffset);
+        this.maxOffsetsCache.put(groupTopicPartition, maxOffset);
       } else {
-        LOG.warn("Non-existent topic/partition: {} - {}", topicPartition, offset);
+        LOG.error("Non-existent topic/partition: {} - {}", topicPartition, offset);
         return;
       }
     }
 
-    long maxOffset = this.maxOffsetsCache.get().get(groupTopicPartition);
+    long maxOffset = this.maxOffsetsCache.get(groupTopicPartition);
     kafkaConsumer.seek(topicPartition, offset > maxOffset ? maxOffset : offset);
     kafkaConsumer.commitSync();
     LOG.debug("Offset was set: {} - {}", topicPartition, offset);
@@ -99,7 +85,7 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
 
   @Override
   public void close() {
-    Collection<KafkaConsumer<Bytes, Bytes>> kafkaConsumers = this.consumersCache.get().values();
+    Collection<KafkaConsumer<Bytes, Bytes>> kafkaConsumers = this.consumersCache.values();
     LOG.debug("Closing {} consumers", kafkaConsumers.size());
     for (KafkaConsumer<Bytes, Bytes> kafkaConsumer : kafkaConsumers) {
       try {
@@ -107,6 +93,21 @@ public class OffsetsRestoreProcessor implements ConsumerOffsetsProcessor<GroupTo
       } catch (Exception e) {
         LOG.error("Error while closing", e);
       }
+    }
+  }
+
+  public static class Builder implements ProcessorBuilder<ConsumerOffsetsProcessor<GroupTopicPartition, Long>> {
+
+    private Properties properties;
+
+    public Builder withProperties(Properties properties) {
+      this.properties = properties;
+      return this;
+    }
+
+    @Override
+    public OffsetsRestoreProcessor build() {
+      return new OffsetsRestoreProcessor(this.properties);
     }
   }
 }

@@ -12,6 +12,7 @@ import io.confluent.consumer.offsets.processor.ConsumerOffsetsProcessor;
 import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
 import io.confluent.consumer.offsets.processor.OffsetsSinkProcessor;
+import io.confluent.consumer.offsets.processor.ThreadLocalProcessor;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -93,7 +94,9 @@ public class ConsumerOffsetsMirrorer {
             .process(new LoggingProcessor<GroupTopicPartition, OffsetAndMetadata>())
             .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
                 new IdentityFunction<GroupTopicPartition>(),
-                  new OffsetsSinkProcessor(producerProperties, options.valueOf(targetTopic))))
+                new ThreadLocalProcessor<>(new OffsetsSinkProcessor.Builder()
+                    .withProperties(producerProperties)
+                    .withTopic(options.valueOf(targetTopic)))))
             .build();
 
     ConsumerOffsetsBlacklist<GroupTopicPartition, OffsetAndMetadata> offsetsBlacklist

@@ -53,13 +53,13 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
         try {
           LOG.debug("Poll start");
           ConsumerRecords<IK, IV> consumerRecords = this.offsetsConsumer.poll(this.pollTimeoutMs);
+          if (isTopicExhausted(consumerRecords.count())) {
+            break;
+          }
           LOG.debug("Number of records is {}", consumerRecords.count());
           List<Map.Entry<OK, OV>> convertedRecords = convert(consumerRecords);
           LOG.debug("Number of records after conversion: {}", convertedRecords.size());
           process(convertedRecords);
-          if (isTopicExhausted(convertedRecords.size())) {
-            break;
-          }
         } catch (WakeupException e) {
           LOG.debug("Wakeup");
         }
@@ -98,15 +98,19 @@ public class ConsumerOffsetsLoop<IK, IV, OK, OV> implements Runnable {
   }
 
   private void process(List<Map.Entry<OK, OV>> entries) {
+    int ignored = 0;
     for (Map.Entry<OK, OV> entry : entries) {
       try {
-        if (!this.offsetsBlacklist.shouldIgnore(entry.getKey(), entry.getValue())) {
+        if (this.offsetsBlacklist.shouldIgnore(entry.getKey(), entry.getValue())) {
+          ignored++;
+        } else {
           this.offsetsProcessor.process(entry.getKey(), entry.getValue());
         }
       } catch (Exception e) {
         LOG.error("Error while processing entry" + entry, e);
       }
     }
+    LOG.debug("{} records were ignored", ignored);
   }
 
   private boolean isTopicExhausted(int numberOfRecords) {
