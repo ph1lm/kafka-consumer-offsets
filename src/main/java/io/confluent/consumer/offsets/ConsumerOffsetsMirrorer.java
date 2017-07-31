@@ -124,5 +124,8 @@ public class ConsumerOffsetsMirrorer {
     Thread thread = new Thread(consumerLoop);
     thread.start();
     thread.join();
+
+    System.out.println("Exiting...");
+    System.exit(0);
   }
 }

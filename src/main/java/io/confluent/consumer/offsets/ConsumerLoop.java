@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
 
@@ -28,7 +30,9 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   private final boolean fromBeginning;
   private final long pollTimeoutMs;
   private final boolean exitIfExhausted;
-  private volatile boolean isRunning = true;
+  private final AtomicBoolean isRunning = new AtomicBoolean(true);
+  private final AtomicInteger totalProcessed = new AtomicInteger();
+  private final AtomicInteger totalIgnored = new AtomicInteger();
 
   public ConsumerLoop(Properties properties, Processor<OK, OV> processor, Blacklist<OK, OV> blacklist,
                       Converter<IK, IV, OK, OV> converter, String topic, boolean fromBeginning, long pollTimeoutMs,
@@ -47,9 +51,10 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   public void run() {
     try {
       subscribe();
-      while (this.isRunning) {
+      while (this.isRunning.get()) {
         try {
           LOG.debug("Poll start");
+
           ConsumerRecords<IK, IV> consumerRecords = this.consumer.poll(this.pollTimeoutMs);
           if (isTopicExhausted(consumerRecords.count())) {
             break;
@@ -57,7 +62,13 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
           LOG.debug("Number of records is {}", consumerRecords.count());
           List<Map.Entry<OK, OV>> convertedRecords = convert(consumerRecords);
           LOG.debug("Number of records after conversion: {}", convertedRecords.size());
-          process(convertedRecords);
+          int processed = process(convertedRecords);
+
+          this.totalProcessed.addAndGet(processed);
+          this.totalIgnored.addAndGet(consumerRecords.count() - processed);
+
+          LOG.debug("Poll end (total ignored: {}, total processed: {})", this.totalIgnored.get(),
+              this.totalProcessed.get());
         } catch (WakeupException e) {
           LOG.debug("Wakeup");
         }
@@ -95,7 +106,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
     }
   }
 
-  private void process(List<Map.Entry<OK, OV>> entries) {
+  private int process(List<Map.Entry<OK, OV>> entries) {
     int ignored = 0;
     for (Map.Entry<OK, OV> entry : entries) {
       try {
@@ -109,6 +120,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
       }
     }
     LOG.debug("{} records were ignored", ignored);
+    return entries.size() - ignored;
   }
 
   private boolean isTopicExhausted(int numberOfRecords) {
@@ -116,7 +128,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   }
 
   public void stop() {
-    this.isRunning = false;
+    this.isRunning.set(false);
     this.consumer.wakeup();
   }
 }
