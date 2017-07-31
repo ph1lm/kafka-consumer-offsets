@@ -12,13 +12,13 @@ public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
   private static final Logger LOG = LoggerFactory.getLogger(ConsistentHashingAsyncProcessor.class);
 
   private final Processor<K, V> delegate;
-  private final Function<K, ?> converter;
+  private final Function<K, ?> keyConverter;
   private final ExecutorService[] executors;
 
-  public ConsistentHashingAsyncProcessor(int numberOfThreads, Function<K, ?> converter,
+  public ConsistentHashingAsyncProcessor(int numberOfThreads, Function<K, ?> keyConverter,
                                          Processor<K, V> delegate) {
     this.delegate = delegate;
-    this.converter = converter;
+    this.keyConverter = keyConverter;
     this.executors = new ExecutorService[numberOfThreads];
     for (int i = 0; i < this.executors.length; i++) {
       this.executors[i] = Executors.newSingleThreadExecutor();
@@ -27,7 +27,7 @@ public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
 
   @Override
   public void process(final K key, final V value) {
-    Object newKey = this.converter.apply(key);
+    Object newKey = this.keyConverter.apply(key);
     int executorIndex = Math.abs(newKey.hashCode()) % this.executors.length;
     this.executors[executorIndex].execute(new Runnable() {
       @Override
