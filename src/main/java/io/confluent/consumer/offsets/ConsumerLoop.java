@@ -56,7 +56,8 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
           LOG.debug("Poll start");
 
           ConsumerRecords<IK, IV> consumerRecords = this.consumer.poll(this.pollTimeoutMs);
-          if (isTopicExhausted(consumerRecords.count())) {
+          if (exitIfExhausted(consumerRecords.count())) {
+            LOG.debug("Topic exhausted - breaking the loop...");
             break;
           }
           LOG.debug("Number of records is {}", consumerRecords.count());
@@ -123,7 +124,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
     return entries.size() - ignored;
   }
 
-  private boolean isTopicExhausted(int numberOfRecords) {
+  private boolean exitIfExhausted(int numberOfRecords) {
     return this.exitIfExhausted && numberOfRecords == 0;
   }
 

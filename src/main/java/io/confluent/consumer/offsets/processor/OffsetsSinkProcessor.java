@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Properties;
 
 public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, OffsetAndMetadata> {
@@ -24,14 +25,12 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
     }
   };
 
-  private final Properties properties;
   private final String topic;
   private final KafkaProducer<String, String> producer;
 
-  public OffsetsSinkProcessor(Properties properties, String topic) {
-    this.properties = properties;
-    this.topic = topic;
-    this.producer = new KafkaProducer<>(OffsetsSinkProcessor.this.properties);
+  private OffsetsSinkProcessor(Properties properties, String topic) {
+    this.topic = Objects.requireNonNull(topic, "topic is null");
+    this.producer = new KafkaProducer<>(Objects.requireNonNull(properties, "properties is null"));
   }
 
   @Override
@@ -42,7 +41,7 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
                 groupTopicPartition.topicPartition().topic(),
                 groupTopicPartition.topicPartition().partition()),
             Long.toString(offsetAndMetadata.offset())),
-        LOGGING_CALLBACK);
+            LOGGING_CALLBACK);
   }
 
   public void close() {

@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, Long> {
@@ -25,8 +26,8 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
   private final Map<String, KafkaConsumer<Bytes, Bytes>> consumersCache = new HashMap<>();
   private final Map<GroupTopicPartition, Long> maxOffsetsCache = new HashMap<>();
 
-  public OffsetsRestoreProcessor(Properties properties) {
-    this.properties = properties;
+  private OffsetsRestoreProcessor(Properties properties) {
+    this.properties = Objects.requireNonNull(properties, "properties is null");
   }
 
   @Override

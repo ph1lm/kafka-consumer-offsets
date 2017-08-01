@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 public class CompositeProcessor<K, V> implements Processor<K, V> {
 
@@ -14,7 +15,7 @@ public class CompositeProcessor<K, V> implements Processor<K, V> {
   private final List<Processor<K, V>> processors;
 
   private CompositeProcessor(List<Processor<K, V>> processors) {
-    this.processors = processors;
+    this.processors = Objects.requireNonNull(processors, "processors is null");
   }
 
   @Override
