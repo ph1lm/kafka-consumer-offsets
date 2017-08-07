@@ -21,6 +21,7 @@ for topic in `kafka-topics --list --zookeeper $source_zk`; do
     partitions=`kafka-topics --describe --topic $topic --zookeeper $source_zk | grep PartitionCount | awk '{ split($2, a, ":"); print a[2] }'`
     echo "$topic - creating $partitions partitions"
     kafka-topics --create --zookeeper $target_zk --topic $topic --partitions $partitions --replication-factor 1
+    curl -X POST -d "{\"topic\":\"$topic\", \"numPartitions\":\"$partitions\"}" http://localhost:9000/topics
   fi
 done
 ```
