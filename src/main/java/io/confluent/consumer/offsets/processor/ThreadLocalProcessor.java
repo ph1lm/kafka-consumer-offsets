@@ -8,7 +8,9 @@ public class ThreadLocalProcessor<K, V> implements Processor<K, V> {
     this.threadLocalDelegate = new ThreadLocal<Processor<K, V>>() {
       @Override
       protected Processor<K, V> initialValue() {
-        return builder.build();
+        synchronized (builder) {
+          return builder.build();
+        }
       }
     };
   }

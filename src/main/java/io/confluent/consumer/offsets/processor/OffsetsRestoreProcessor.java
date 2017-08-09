@@ -21,6 +21,7 @@ import java.util.Properties;
 public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, Long> {
 
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsRestoreProcessor.class);
+  private static final String DEFAULT_SESSION_TIMEOUT = "30000";
 
   private final Properties properties;
   private final Map<String, KafkaConsumer<Bytes, Bytes>> consumersCache = new HashMap<>();
@@ -78,7 +79,7 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
     properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, Boolean.FALSE.toString());
     properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
     properties.setProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,
-        this.properties.getProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG));
+        this.properties.getProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, DEFAULT_SESSION_TIMEOUT));
     properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
     properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
     return new KafkaConsumer<>(properties);

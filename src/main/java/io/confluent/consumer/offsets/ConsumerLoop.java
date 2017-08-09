@@ -3,6 +3,7 @@ package io.confluent.consumer.offsets;
 import io.confluent.consumer.offsets.blacklist.Blacklist;
 import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.processor.Processor;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -15,14 +16,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
 
   private static final Logger LOG = LoggerFactory.getLogger(ConsumerLoop.class);
 
-  private final KafkaConsumer<IK, IV> consumer;
+  private final Consumer<IK, IV> consumer;
   private final Processor<OK, OV> processor;
   private final Blacklist<OK, OV> blacklist;
   private final Converter<IK, IV, OK, OV> converter;
@@ -30,14 +30,30 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   private final boolean fromBeginning;
   private final long pollTimeoutMs;
   private final boolean exitIfExhausted;
-  private final AtomicBoolean isRunning = new AtomicBoolean(true);
   private final AtomicInteger totalProcessed = new AtomicInteger();
   private final AtomicInteger totalIgnored = new AtomicInteger();
 
-  public ConsumerLoop(Properties properties, Processor<OK, OV> processor, Blacklist<OK, OV> blacklist,
-                      Converter<IK, IV, OK, OV> converter, String topic, boolean fromBeginning, long pollTimeoutMs,
+  public ConsumerLoop(Properties properties,
+                      Processor<OK, OV> processor,
+                      Blacklist<OK, OV> blacklist,
+                      Converter<IK, IV, OK, OV> converter,
+                      String topic,
+                      boolean fromBeginning,
+                      long pollTimeoutMs,
                       boolean exitIfExhausted) {
-    this.consumer = new KafkaConsumer<>(properties);
+    this(new KafkaConsumer<IK, IV>(properties), processor, blacklist, converter, topic, fromBeginning, pollTimeoutMs,
+        exitIfExhausted);
+  }
+
+  public ConsumerLoop(Consumer<IK, IV> consumer,
+                      Processor<OK, OV> processor,
+                      Blacklist<OK, OV> blacklist,
+                      Converter<IK, IV, OK, OV> converter,
+                      String topic,
+                      boolean fromBeginning,
+                      long pollTimeoutMs,
+                      boolean exitIfExhausted) {
+    this.consumer = consumer;
     this.processor = processor;
     this.blacklist = blacklist;
     this.converter = converter;
@@ -51,29 +67,27 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   public void run() {
     try {
       subscribe();
-      while (this.isRunning.get()) {
-        try {
-          LOG.debug("Poll start");
+      while (true) {
+        LOG.debug("Poll start");
 
-          ConsumerRecords<IK, IV> consumerRecords = this.consumer.poll(this.pollTimeoutMs);
-          if (exitIfExhausted(consumerRecords.count())) {
-            LOG.debug("Topic exhausted - breaking the loop...");
-            break;
-          }
-          LOG.debug("Number of records is {}", consumerRecords.count());
-          List<Map.Entry<OK, OV>> convertedRecords = convert(consumerRecords);
-          LOG.debug("Number of records after conversion: {}", convertedRecords.size());
-          int processed = process(convertedRecords);
-
-          this.totalProcessed.addAndGet(processed);
-          this.totalIgnored.addAndGet(consumerRecords.count() - processed);
-
-          LOG.debug("Poll end (total ignored: {}, total processed: {})", this.totalIgnored.get(),
-              this.totalProcessed.get());
-        } catch (WakeupException e) {
-          LOG.debug("Wakeup");
+        ConsumerRecords<IK, IV> consumerRecords = this.consumer.poll(this.pollTimeoutMs);
+        if (exitIfExhausted(consumerRecords.count())) {
+          LOG.debug("Topic exhausted - breaking the loop...");
+          break;
         }
+        LOG.debug("Number of records is {}", consumerRecords.count());
+        List<Map.Entry<OK, OV>> convertedRecords = convert(consumerRecords);
+        LOG.debug("Number of records after conversion: {}", convertedRecords.size());
+        int processed = process(convertedRecords);
+
+        this.totalProcessed.addAndGet(processed);
+        this.totalIgnored.addAndGet(consumerRecords.count() - processed);
+
+        LOG.debug("Poll end (total ignored: {}, total processed: {})", this.totalIgnored.get(),
+            this.totalProcessed.get());
       }
+    } catch (WakeupException e) {
+      LOG.debug("Exiting main loop");
     } catch (Exception e) {
       LOG.error("Error in main loop", e);
     } finally {
@@ -118,6 +132,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
         }
       } catch (Exception e) {
         LOG.error("Error while processing entry" + entry, e);
+        ignored++;
       }
     }
     LOG.debug("{} records were ignored", ignored);
@@ -129,7 +144,6 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   }
 
   public void stop() {
-    this.isRunning.set(false);
     this.consumer.wakeup();
   }
 }

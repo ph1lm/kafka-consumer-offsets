@@ -44,6 +44,10 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
         LOGGING_CALLBACK);
   }
 
+  public void flush() {
+    this.producer.flush();
+  }
+
   public void close() {
     LOG.debug("Closing producer");
     this.producer.flush();
@@ -64,7 +68,6 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
       this.topic = topic;
       return this;
     }
-
 
     @Override
     public OffsetsSinkProcessor build() {

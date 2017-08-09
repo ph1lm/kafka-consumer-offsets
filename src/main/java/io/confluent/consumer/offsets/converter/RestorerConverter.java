@@ -15,19 +15,15 @@ public class RestorerConverter
   @Override
   public Map.Entry<GroupTopicPartition, Long> apply(ConsumerRecord<String, String> consumerRecord) {
     String key = consumerRecord.key();
-    String value = consumerRecord.value();
-
     String[] split = key.split(KEY_SPLIT);
-    if (split.length != 3) {
-      return null;
-    }
-
     String group = split[0];
     String topic = split[1];
-    Integer parition = Integer.parseInt(split[2]);
+    Integer partition = Integer.parseInt(split[2]);
+
+    String value = consumerRecord.value();
     long offset = Long.parseLong(value);
 
-    TopicPartition topicPartition = new TopicPartition(topic, parition);
+    TopicPartition topicPartition = new TopicPartition(topic, partition);
     GroupTopicPartition groupTopicPartition = new GroupTopicPartition(group, topicPartition);
     return new AbstractMap.SimpleImmutableEntry<>(groupTopicPartition, offset);
   }

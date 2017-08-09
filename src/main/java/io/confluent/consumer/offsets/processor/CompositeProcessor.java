@@ -3,6 +3,7 @@ package io.confluent.consumer.offsets.processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +53,7 @@ public class CompositeProcessor<K, V> implements Processor<K, V> {
 
     @Override
     public Processor<K, V> build() {
-      return new CompositeProcessor<>(Collections.unmodifiableList(this.processors));
+      return new CompositeProcessor<>(Collections.unmodifiableList(new ArrayList<>(this.processors)));
     }
   }
 }

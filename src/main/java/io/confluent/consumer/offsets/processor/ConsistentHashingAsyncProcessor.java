@@ -83,7 +83,6 @@ public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
 
     @Override
     public boolean offer(E e) {
-      // turn offer() and add() into a blocking calls (unless interrupted)
       try {
         put(e);
         return true;
