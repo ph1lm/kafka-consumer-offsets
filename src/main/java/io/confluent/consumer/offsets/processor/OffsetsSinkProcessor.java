@@ -35,17 +35,13 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
 
   @Override
   public void process(GroupTopicPartition groupTopicPartition, OffsetAndMetadata offsetAndMetadata) {
-    try {
-      this.producer.send(new ProducerRecord<>(this.topic,
-              String.format(OFFSET_KEY_FORMAT,
-                  groupTopicPartition.group(),
-                  groupTopicPartition.topicPartition().topic(),
-                  groupTopicPartition.topicPartition().partition()),
-              Long.toString(offsetAndMetadata.offset())),
-              LOGGING_CALLBACK).get();
-    } catch (Exception e) {
-      LOG.error("Error during sending", e);
-    }
+    this.producer.send(new ProducerRecord<>(this.topic,
+            String.format(OFFSET_KEY_FORMAT,
+                groupTopicPartition.group(),
+                groupTopicPartition.topicPartition().topic(),
+                groupTopicPartition.topicPartition().partition()),
+            Long.toString(offsetAndMetadata.offset())),
+        LOGGING_CALLBACK);
   }
 
   public void close() {
