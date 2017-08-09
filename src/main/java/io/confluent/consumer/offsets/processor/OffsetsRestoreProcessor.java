@@ -1,6 +1,7 @@
 package io.confluent.consumer.offsets.processor;
 
 import kafka.coordinator.GroupTopicPartition;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
@@ -24,7 +25,7 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
   private static final String DEFAULT_SESSION_TIMEOUT = "30000";
 
   private final Properties properties;
-  private final Map<String, KafkaConsumer<Bytes, Bytes>> consumersCache = new HashMap<>();
+  private final Map<String, Consumer<Bytes, Bytes>> consumersCache = new HashMap<>();
   private final Map<GroupTopicPartition, Long> maxOffsetsCache = new HashMap<>();
 
   private OffsetsRestoreProcessor(Properties properties) {
@@ -34,7 +35,7 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
   @Override
   public void process(GroupTopicPartition groupTopicPartition, Long offset) {
     String group = groupTopicPartition.group();
-    KafkaConsumer<Bytes, Bytes> kafkaConsumer = this.consumersCache.get(group);
+    Consumer<Bytes, Bytes> kafkaConsumer = this.consumersCache.get(group);
     if (kafkaConsumer == null) {
       kafkaConsumer = createKafkaConsumerForGroup(group);
       this.consumersCache.put(group, kafkaConsumer);
@@ -71,7 +72,7 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
     return false;
   }
 
-  private KafkaConsumer<Bytes, Bytes> createKafkaConsumerForGroup(String group) {
+  private Consumer<Bytes, Bytes> createKafkaConsumerForGroup(String group) {
     Properties properties = new Properties();
     properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
         this.properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
@@ -87,9 +88,9 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
 
   @Override
   public void close() {
-    Collection<KafkaConsumer<Bytes, Bytes>> kafkaConsumers = this.consumersCache.values();
+    Collection<Consumer<Bytes, Bytes>> kafkaConsumers = this.consumersCache.values();
     LOG.debug("Closing {} consumers", kafkaConsumers.size());
-    for (KafkaConsumer<Bytes, Bytes> kafkaConsumer : kafkaConsumers) {
+    for (Consumer<Bytes, Bytes> kafkaConsumer : kafkaConsumers) {
       try {
         kafkaConsumer.close();
       } catch (Exception e) {

@@ -4,6 +4,7 @@ import kafka.common.OffsetAndMetadata;
 import kafka.coordinator.GroupTopicPartition;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
   };
 
   private final String topic;
-  private final KafkaProducer<String, String> producer;
+  private final Producer<String, String> producer;
 
   private OffsetsSinkProcessor(Properties properties, String topic) {
     this.topic = Objects.requireNonNull(topic, "topic is null");
