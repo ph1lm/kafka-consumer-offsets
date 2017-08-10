@@ -29,8 +29,8 @@ import static org.mockito.Mockito.verify;
 
 public class ConsumerLoopTest {
 
-  public static final String TOPIC = "testTopic";
-  public static final int POLL_TIMEOUT = 1;
+  private static final String TOPIC = "testTopic";
+  private static final int POLL_TIMEOUT = 1;
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();

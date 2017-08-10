@@ -8,6 +8,7 @@ import kafka.coordinator.GroupTopicPartition;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.utils.Bytes;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
@@ -16,7 +17,12 @@ import static org.junit.Assert.assertEquals;
 
 public class MirrorerConverterTest {
 
-  private MirrorerConverter mirrorerConverter = new MirrorerConverter();
+  private MirrorerConverter mirrorerConverter;
+
+  @Before
+  public void setUp() throws Exception {
+    this.mirrorerConverter = new MirrorerConverter();
+  }
 
   @Test
   public void applyValid() throws Exception {

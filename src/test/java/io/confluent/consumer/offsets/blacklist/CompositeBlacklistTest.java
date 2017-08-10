@@ -26,7 +26,7 @@ public class CompositeBlacklistTest {
   @Mock
   private Blacklist<Object, Object> failingBlackList;
 
-  private Blacklist<Object, Object> ignoreNothingBlacklist = new IgnoreNothingBlacklist<>();
+  private final Blacklist<Object, Object> ignoreNothingBlacklist = new IgnoreNothingBlacklist<>();
   private Blacklist<Object, Object> compositeBlacklist;
 
   @Before

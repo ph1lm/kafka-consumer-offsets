@@ -17,6 +17,7 @@ import static org.junit.Assert.assertNotNull;
 public class OffsetsSinkProcessorTest extends KafkaTestBase {
 
   private static final String TOPIC = "testTopic";
+
   private OffsetsSinkProcessor offsetsSinkProcessor;
   private KafkaConsumer<String, String> kafkaConsumer;
 

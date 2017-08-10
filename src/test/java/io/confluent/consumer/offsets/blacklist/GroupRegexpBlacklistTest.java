@@ -4,13 +4,19 @@ import kafka.common.OffsetAndMetadata;
 import kafka.common.OffsetMetadata;
 import kafka.coordinator.GroupTopicPartition;
 import org.apache.kafka.common.TopicPartition;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class GroupRegexpBlacklistTest {
 
-  private GroupRegexpBlacklist blacklist = new GroupRegexpBlacklist("a*");
+  private GroupRegexpBlacklist blacklist;
+
+  @Before
+  public void setUp() throws Exception {
+    this.blacklist = new GroupRegexpBlacklist("a*");
+  }
 
   @Test
   public void shouldIgnore() throws Exception {

@@ -2,6 +2,7 @@ package io.confluent.consumer.offsets.converter;
 
 import kafka.coordinator.GroupTopicPartition;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
@@ -10,16 +11,21 @@ import static org.junit.Assert.*;
 
 public class RestorerConverterTest {
 
+  private RestorerConverter restorerConverter;
+
+  @Before
+  public void setUp() throws Exception {
+    this.restorerConverter = new RestorerConverter();
+  }
+
   @Test(expected = Exception.class)
   public void applyInvalid() throws Exception {
-    RestorerConverter restorerConverter = new RestorerConverter();
-    restorerConverter.apply(new ConsumerRecord<>("topic", 0, 0L, "", ""));
+    this.restorerConverter.apply(new ConsumerRecord<>("topic", 0, 0L, "", ""));
   }
 
   @Test
   public void applyValid() throws Exception {
-    RestorerConverter restorerConverter = new RestorerConverter();
-    Map.Entry<GroupTopicPartition, Long> entry = restorerConverter.apply(
+    Map.Entry<GroupTopicPartition, Long> entry = this.restorerConverter.apply(
         new ConsumerRecord<>("topic", 0, 0L, "group/topic/1", "1"));
 
     GroupTopicPartition groupTopicPartition = entry.getKey();
