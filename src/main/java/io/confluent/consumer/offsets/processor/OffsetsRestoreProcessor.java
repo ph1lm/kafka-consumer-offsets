@@ -22,7 +22,6 @@ import java.util.Properties;
 public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, Long> {
 
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsRestoreProcessor.class);
-  private static final String DEFAULT_SESSION_TIMEOUT = "30000";
 
   private final Properties properties;
   private final Map<String, Consumer<Bytes, Bytes>> consumersCache = new HashMap<>();
@@ -73,17 +72,13 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
   }
 
   private Consumer<Bytes, Bytes> createKafkaConsumerForGroup(String group) {
-    Properties properties = new Properties();
-    properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-        this.properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
-    properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, group);
-    properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, Boolean.FALSE.toString());
-    properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-    properties.setProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,
-        this.properties.getProperty(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, DEFAULT_SESSION_TIMEOUT));
-    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
-    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
-    return new KafkaConsumer<>(properties);
+    HashMap<String, Object> newProperties = copyProperties(this.properties);
+    newProperties.put(ConsumerConfig.GROUP_ID_CONFIG, group);
+    newProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, Boolean.FALSE.toString());
+    newProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+    newProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
+    newProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
+    return new KafkaConsumer<>(newProperties);
   }
 
   @Override
@@ -97,6 +92,14 @@ public class OffsetsRestoreProcessor implements Processor<GroupTopicPartition, L
         LOG.error("Error while closing", e);
       }
     }
+  }
+
+  private static HashMap<String, Object> copyProperties(Properties properties) {
+    HashMap<String, Object> newProperties = new HashMap<>();
+    for (String property: properties.stringPropertyNames()) {
+      newProperties.put(property, properties.getProperty(property));
+    }
+    return newProperties;
   }
 
   public static class Builder implements ProcessorBuilder<GroupTopicPartition, Long> {
