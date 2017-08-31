@@ -19,15 +19,20 @@ public class MirrorerConverter
 
   @Override
   public Map.Entry<GroupTopicPartition, OffsetAndMetadata> apply(ConsumerRecord<Bytes, Bytes> consumerRecord) {
-    byte[] key = consumerRecord.key().get();
-    byte[] value = consumerRecord.value().get();
+    byte[] key = consumerRecord.key() == null ? null : consumerRecord.key().get();
+    byte[] value = consumerRecord.value() == null ? null : consumerRecord.value().get();
+    if (key == null || value == null) {
+      return null;
+    }
+
     BaseKey baseKey = readMessageKey(wrap(key));
     if (baseKey instanceof OffsetKey) {
       OffsetKey offsetKey = (OffsetKey) baseKey;
       GroupTopicPartition groupTopicPartition = offsetKey.key();
-      OffsetAndMetadata offsetAndMetadata = value == null ? null : readOffsetMessageValue(wrap(value));
+      OffsetAndMetadata offsetAndMetadata = readOffsetMessageValue(wrap(value));
       return new AbstractMap.SimpleImmutableEntry<>(groupTopicPartition, offsetAndMetadata);
     }
+
     return null;
   }
 }
