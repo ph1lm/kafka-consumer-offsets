@@ -1,6 +1,7 @@
 package io.confluent.consumer.offsets;
 
 import io.confluent.consumer.offsets.blacklist.Blacklist;
+import io.confluent.consumer.offsets.concurrent.IdleStateCondition;
 import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.processor.Processor;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -29,7 +30,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   private final String topic;
   private final boolean fromBeginning;
   private final long pollTimeoutMs;
-  private final boolean exitIfExhausted;
+  private final IdleStateCondition idleStateCondition;
   private final AtomicInteger totalProcessed = new AtomicInteger();
   private final AtomicInteger totalIgnored = new AtomicInteger();
 
@@ -40,9 +41,9 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
                       String topic,
                       boolean fromBeginning,
                       long pollTimeoutMs,
-                      boolean exitIfExhausted) {
+                      long idleStateTimeoutSecs) {
     this(new KafkaConsumer<IK, IV>(properties), processor, blacklist, converter, topic, fromBeginning, pollTimeoutMs,
-        exitIfExhausted);
+        idleStateTimeoutSecs);
   }
 
   public ConsumerLoop(Consumer<IK, IV> consumer,
@@ -52,7 +53,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
                       String topic,
                       boolean fromBeginning,
                       long pollTimeoutMs,
-                      boolean exitIfExhausted) {
+                      long idleStateTimeoutSecs) {
     this.consumer = consumer;
     this.processor = processor;
     this.blacklist = blacklist;
@@ -60,25 +61,24 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
     this.topic = topic;
     this.fromBeginning = fromBeginning;
     this.pollTimeoutMs = pollTimeoutMs;
-    this.exitIfExhausted = exitIfExhausted;
+    this.idleStateCondition = idleStateTimeoutSecs > 0 ? new IdleStateCondition(idleStateTimeoutSecs) : null;
   }
 
   @Override
   public void run() {
     try {
+      initIdleState();
       subscribe();
       while (true) {
         LOG.debug("Poll start");
 
         ConsumerRecords<IK, IV> consumerRecords = this.consumer.poll(this.pollTimeoutMs);
-        if (exitIfExhausted(consumerRecords.count())) {
-          LOG.debug("Topic exhausted - breaking the loop...");
-          break;
-        }
         LOG.debug("Number of records is {}", consumerRecords.count());
         List<Map.Entry<OK, OV>> convertedRecords = convert(consumerRecords);
         LOG.debug("Number of records after conversion: {}", convertedRecords.size());
         int processed = process(convertedRecords);
+
+        postponeIdelState(processed);
 
         this.totalProcessed.addAndGet(processed);
         this.totalIgnored.addAndGet(consumerRecords.count() - processed);
@@ -93,6 +93,27 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
     } finally {
       this.consumer.close();
       this.processor.close();
+      if (this.idleStateCondition != null) {
+        this.idleStateCondition.close();
+      }
+    }
+  }
+
+  private void postponeIdelState(int processed) {
+    if (processed > 0 && this.idleStateCondition != null) {
+      this.idleStateCondition.postpone();
+    }
+  }
+
+  private void initIdleState() {
+    if (this.idleStateCondition != null) {
+      this.idleStateCondition.async(new Runnable() {
+        @Override
+        public void run() {
+          LOG.info("Idle state occurred");
+          ConsumerLoop.this.stop();
+        }
+      });
     }
   }
 
@@ -137,10 +158,6 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
     }
     LOG.debug("{} records were ignored", ignored);
     return entries.size() - ignored;
-  }
-
-  private boolean exitIfExhausted(int numberOfRecords) {
-    return this.exitIfExhausted && numberOfRecords == 0;
   }
 
   public void stop() {

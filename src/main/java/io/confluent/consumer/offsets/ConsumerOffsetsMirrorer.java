@@ -61,6 +61,10 @@ public class ConsumerOffsetsMirrorer {
         .withRequiredArg()
         .ofType(Integer.class)
         .defaultsTo(Integer.MAX_VALUE);
+    OptionSpec<Integer> idleStateTimeoutSecs = parser.accepts("idle-state-timeout-secs",
+        "Application closes if nothing is arrived from the topic during this timeout.")
+        .withRequiredArg()
+        .ofType(Integer.class);
     OptionSpec<String> groupBlackList = parser.accepts("groupBlacklist",
         "Regular expression that filters out groups that should not be restored.")
         .withRequiredArg()
@@ -80,7 +84,7 @@ public class ConsumerOffsetsMirrorer {
       exit(0);
     }
 
-    for (OptionSpec<String> requiredOption : Arrays.asList(consumerConfig, producerConfig)) {
+    for (OptionSpec<?> requiredOption : Arrays.asList(consumerConfig, producerConfig, idleStateTimeoutSecs)) {
       if (!options.has(requiredOption)) {
         System.out.println(format("Missing required argument: %s", requiredOption));
         parser.printHelpOn(System.out);
@@ -124,7 +128,8 @@ public class ConsumerOffsetsMirrorer {
 
     final ConsumerLoop<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> consumerLoop =
         new ConsumerLoop<>(consumerProperties, processor, blacklist, converter,
-            options.valueOf(sourceTopic), options.has(fromBeginning), options.valueOf(pollTimeoutMs), false);
+            options.valueOf(sourceTopic), options.has(fromBeginning), options.valueOf(pollTimeoutMs),
+              options.valueOf(idleStateTimeoutSecs));
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override

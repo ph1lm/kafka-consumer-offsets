@@ -49,7 +49,7 @@ public class ConsumerLoopTest {
   @Before
   public void setUp() throws Exception {
     this.consumerLoop = new ConsumerLoop<>(this.consumer, this.processor, this.blackList, new IdentityConverter<>(),
-        TOPIC,true, POLL_TIMEOUT, true);
+        TOPIC,true, POLL_TIMEOUT, -1);
   }
 
   private static ConsumerRecords<Object, Object> emptyDataFixture() {
@@ -68,7 +68,8 @@ public class ConsumerLoopTest {
 
   @Test
   public void testPoll() throws Exception {
-    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).when(this.consumer).poll(POLL_TIMEOUT);
+    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).doThrow(new WakeupException())
+        .when(this.consumer).poll(POLL_TIMEOUT);
     this.consumerLoop.run();
     verify(this.blackList).shouldIgnore("testKey1", "testValue1");
     verify(this.blackList).shouldIgnore("testKey2", "testValue2");
@@ -79,7 +80,8 @@ public class ConsumerLoopTest {
 
   @Test
   public void testWhenAllIgnored() throws Exception {
-    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).when(this.consumer).poll(POLL_TIMEOUT);
+    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).doThrow(new WakeupException())
+        .when(this.consumer).poll(POLL_TIMEOUT);
     doReturn(true).when(this.blackList).shouldIgnore(any(), any());
     this.consumerLoop.run();
     verify(this.processor, never()).process(any(), any());
@@ -96,7 +98,8 @@ public class ConsumerLoopTest {
 
   @Test
   public void testErrorInProcessor() throws Exception {
-    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).when(this.consumer).poll(POLL_TIMEOUT);
+    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).doThrow(new WakeupException())
+        .when(this.consumer).poll(POLL_TIMEOUT);
     doThrow(new RuntimeException("test exception")).when(this.processor).process("testKey1", "testValue1");
     doReturn(false).when(this.blackList).shouldIgnore(any(), any());
     this.consumerLoop.run();
@@ -107,7 +110,8 @@ public class ConsumerLoopTest {
 
   @Test
   public void testErrorInBlackList() throws Exception {
-    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).when(this.consumer).poll(POLL_TIMEOUT);
+    doReturn(topicDataFixture()).doReturn(emptyDataFixture()).doThrow(new WakeupException())
+        .when(this.consumer).poll(POLL_TIMEOUT);
     doThrow(new RuntimeException("test exception")).when(this.blackList).shouldIgnore("testKey1", "testValue1");
     doReturn(false).when(this.blackList).shouldIgnore(any(), any());
     this.consumerLoop.run();

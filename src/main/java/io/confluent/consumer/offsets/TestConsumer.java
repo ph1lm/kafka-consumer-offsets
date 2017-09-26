@@ -41,7 +41,7 @@ public class TestConsumer {
 
     final ConsumerLoop<String, String, String, String> consumerLoop = new ConsumerLoop<>(
         properties, processor, blacklist, converter, topic, false, Integer.MAX_VALUE,
-        false);
+        30);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override

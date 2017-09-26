@@ -17,6 +17,7 @@ import kafka.coordinator.GroupTopicPartition;
 
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.Properties;
 
 import static java.lang.String.format;
@@ -46,7 +47,12 @@ public class ConsumerOffsetsRestorer {
         "Poll timeout for source topic.")
         .withRequiredArg()
         .ofType(Integer.class)
-        .defaultsTo(5000);
+        .defaultsTo(Integer.MAX_VALUE);
+    OptionSpec<Integer> idleStateTimeoutSecs = parser.accepts("idle-state-timeout-secs",
+        "Application closes if nothing is arrived from the topic during this timeout.")
+        .withRequiredArg()
+        .ofType(Integer.class);
+
     OptionSpec help = parser.accepts("help", "Print this message.");
 
     OptionSet options = parser.parse(args);
@@ -56,10 +62,12 @@ public class ConsumerOffsetsRestorer {
       exit(0);
     }
 
-    if (!options.has(consumerConfig)) {
-      System.out.println(format("Missing required argument: %s", consumerConfig));
-      parser.printHelpOn(System.out);
-      exit(0);
+    for (OptionSpec<?> requiredOption : Arrays.asList(consumerConfig, idleStateTimeoutSecs)) {
+      if (!options.has(requiredOption)) {
+        System.out.println(format("Missing required argument: %s", requiredOption));
+        parser.printHelpOn(System.out);
+        exit(0);
+      }
     }
 
     Properties consumerProperties = new Properties();
@@ -80,7 +88,7 @@ public class ConsumerOffsetsRestorer {
     final ConsumerLoop<String, String, GroupTopicPartition, Long> consumerLoop =
         new ConsumerLoop<>(consumerProperties, processor,
             new IgnoreNothingBlacklist<GroupTopicPartition, Long>(), restorerConverter, options.valueOf(sourceTopic),
-            options.has(fromBeginning), options.valueOf(pollTimeoutMs), true);
+              options.has(fromBeginning), options.valueOf(pollTimeoutMs), options.valueOf(idleStateTimeoutSecs));
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
