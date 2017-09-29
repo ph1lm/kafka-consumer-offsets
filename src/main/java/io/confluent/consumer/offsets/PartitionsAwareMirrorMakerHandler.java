@@ -50,6 +50,6 @@ public class PartitionsAwareMirrorMakerHandler implements MirrorMaker.MirrorMake
       }
     });
 
-    LOGGING_TIME_SAMPLE = Long.parseLong(System.getProperty("logging-time-sample-ms", Long.toString(60*1000))); //1min by default
+    LOGGING_TIME_SAMPLE = Long.parseLong(System.getProperty("logging-time-sample-ms", Long.toString(60 * 1000))); //1min by default
   }
 }
