@@ -29,7 +29,7 @@ public class PartitionsAwareMirrorMakerHandler implements MirrorMaker.MirrorMake
     COUNTER.incrementAndGet();
     if (System.currentTimeMillis() - LAST_TS.get() >= LOGGING_TIME_SAMPLE) {
       LAST_TS.set(System.currentTimeMillis());
-      LOG.info(String.format("Processed record: %s", COUNTER.getAndSet(0)));
+      LOG.warn(String.format("Processed record: %s", COUNTER.getAndSet(0)));
     }
   }
 
@@ -45,7 +45,7 @@ public class PartitionsAwareMirrorMakerHandler implements MirrorMaker.MirrorMake
     IDLE_STATE_CONDITION.async(new Runnable() {
       @Override
       public void run() {
-        System.out.println("Idle state event occurred");
+        LOG.warn("Idle state event occurred");
         System.exit(0);
       }
     });
