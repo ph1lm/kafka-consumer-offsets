@@ -67,8 +67,8 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
   @Override
   public void run() {
     try {
-      initIdleState();
       subscribe();
+      initIdleState();
       while (true) {
         LOG.debug("Poll start");
 
