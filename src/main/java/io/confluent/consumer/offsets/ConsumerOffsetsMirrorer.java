@@ -9,8 +9,8 @@ import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.converter.MirrorerConverter;
 import io.confluent.consumer.offsets.function.IdentityFunction;
 import io.confluent.consumer.offsets.processor.ConsistentHashingAsyncProcessor;
+import io.confluent.consumer.offsets.processor.NewGroupLoggingAlsoProcessor;
 import io.confluent.consumer.offsets.processor.Processor;
-import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
 import io.confluent.consumer.offsets.processor.OffsetsSinkProcessor;
 import io.confluent.consumer.offsets.processor.ThreadLocalProcessor;
@@ -104,7 +104,7 @@ public class ConsumerOffsetsMirrorer {
 
     Processor<GroupTopicPartition, OffsetAndMetadata> processor
         = new CompositeProcessor.Builder<GroupTopicPartition, OffsetAndMetadata>()
-            .process(new LoggingProcessor<GroupTopicPartition, OffsetAndMetadata>())
+            .process(new NewGroupLoggingAlsoProcessor<OffsetAndMetadata>())
             .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
                 new IdentityFunction<GroupTopicPartition>(),
                 new ThreadLocalProcessor<>(new OffsetsSinkProcessor.Builder()
