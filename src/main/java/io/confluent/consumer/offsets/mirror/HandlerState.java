@@ -1,4 +1,4 @@
-package io.confluent.consumer.offsets.handler;
+package io.confluent.consumer.offsets.mirror;
 
 public enum HandlerState {
   WAITING,

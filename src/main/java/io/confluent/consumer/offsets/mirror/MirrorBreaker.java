@@ -1,8 +1,6 @@
 package io.confluent.consumer.offsets.mirror;
 
 import io.confluent.consumer.offsets.concurrent.IdleStateCondition;
-import io.confluent.consumer.offsets.handler.HandlerMode;
-import io.confluent.consumer.offsets.handler.HandlerState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +27,7 @@ public class MirrorBreaker {
   }
 
   private void exit() {
-    if (HandlerMode.DAEMON.equals(this.mirrorStateStore.getMode())) {
+    if (MirrorBreakerMode.DAEMON.equals(this.mirrorStateStore.getMode())) {
       LOG.warn("Rescheduling...");
       schedule();
     } else {

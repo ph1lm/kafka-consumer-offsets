@@ -1,7 +1,7 @@
 package io.confluent.consumer.offsets.web.endpoint;
 
 import com.sun.net.httpserver.HttpExchange;
-import io.confluent.consumer.offsets.handler.HandlerMode;
+import io.confluent.consumer.offsets.mirror.MirrorBreakerMode;
 import io.confluent.consumer.offsets.mirror.MirrorStateStore;
 import io.confluent.consumer.offsets.web.BaseHttpHandler;
 import io.confluent.consumer.offsets.web.HandlerEndPoint;
@@ -40,6 +40,6 @@ public class ModeEndPoint implements HandlerEndPoint {
   @Setter
   @NoArgsConstructor
   static class Mode {
-    private HandlerMode mode;
+    private MirrorBreakerMode mode;
   }
 }

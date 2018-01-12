@@ -1,8 +1,6 @@
 package io.confluent.consumer.offsets.mirror;
 
-import com.google.common.collect.ImmutableMap;
-import io.confluent.consumer.offsets.handler.HandlerMode;
-import io.confluent.consumer.offsets.handler.HandlerState;
+import com.google.common.collect.ImmutableSortedMap;
 import kafka.consumer.BaseConsumerRecord;
 
 import java.util.Map;
@@ -13,24 +11,17 @@ import java.util.function.BiFunction;
 
 public class MirrorStateStore {
 
-  private static volatile MirrorStateStore instance;
-  private final AtomicReference<HandlerMode> mode;
+  private static volatile MirrorStateStore instance = new MirrorStateStore();
+  private final AtomicReference<MirrorBreakerMode> mode;
   private final AtomicReference<HandlerState> state;
   private final ConcurrentHashMap<ProgressKey, ProgressValue> progress;
 
   public static MirrorStateStore getInstance() {
-    if (instance == null) {
-      synchronized (MirrorStateStore.class) {
-        if (instance == null) {
-          instance = new MirrorStateStore();
-        }
-      }
-    }
     return instance;
   }
 
   private MirrorStateStore() {
-    this.mode = new AtomicReference<>(HandlerMode.DAEMON);
+    this.mode = new AtomicReference<>(MirrorBreakerMode.DAEMON);
     this.state = new AtomicReference<>(HandlerState.WAITING);
     this.progress = new ConcurrentHashMap<>();
   }
@@ -39,7 +30,7 @@ public class MirrorStateStore {
     this.state.getAndSet(mode);
   }
 
-  public HandlerMode getMode() {
+  public MirrorBreakerMode getMode() {
     return this.mode.get();
   }
 
@@ -47,7 +38,7 @@ public class MirrorStateStore {
     this.progress.compute(new ProgressKey(record.topic(), record.partition()), new OnMessage(record.offset()));
   }
 
-  public void switchModeTo(HandlerMode mode) {
+  public void switchModeTo(MirrorBreakerMode mode) {
     this.mode.getAndSet(mode);
   }
 
@@ -56,12 +47,21 @@ public class MirrorStateStore {
   }
 
   public Map getProgress() {
-    return ImmutableMap.copyOf(this.progress);
+    return ImmutableSortedMap.copyOf(this.progress, (thisKey, thatKey) -> {
+      if (thisKey.getTopic() != thatKey.getTopic()) {
+        if (thisKey.getTopic().compareTo(thatKey.getTopic()) < 0) {
+          return -1;
+        } else if (thisKey.getTopic().compareTo(thatKey.getTopic()) > 0) {
+          return 1;
+        }
+      }
+      return Integer.compare(thisKey.getPartition(), thatKey.getPartition());
+    });
   }
 
   class OnMessage implements BiFunction<ProgressKey, ProgressValue, ProgressValue> {
 
-    private long offset;
+    private final long offset;
 
     public OnMessage(long offset) {
       this.offset = offset;
