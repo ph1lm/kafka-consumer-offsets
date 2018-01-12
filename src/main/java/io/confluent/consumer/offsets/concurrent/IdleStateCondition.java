@@ -62,12 +62,7 @@ public class IdleStateCondition {
   public void sync() {
     try {
       final CountDownLatch latch = new CountDownLatch(1);
-      async(new Runnable() {
-        @Override
-        public void run() {
-          latch.countDown();
-        }
-      });
+      async(latch::countDown);
       latch.await();
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
