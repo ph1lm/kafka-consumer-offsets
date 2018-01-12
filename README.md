@@ -76,17 +76,23 @@ Content-length: 1793
 
 {
   "content" : {
-    "ProgressKey(topic=cities, partition=2)" : {
-      "offset" : 3327901,
-      "count" : 47593
-    },
-    "ProgressKey(topic=cities, partition=3)" : {
-      "offset" : 2974566,
-      "count" : 47573
-    },
-    "ProgressKey(topic=cities, partition=0)" : {
-      "offset" : 3272839,
-      "count" : 47647
+    "progress" : {
+      "cities:0" : {
+        "offset" : 5547290,
+        "count" : 130317
+      },
+      "cities:1" : {
+        "offset" : 5642245,
+        "count" : 133155
+      },
+      "cities:2" : {
+        "offset" : 5643538,
+        "count" : 133941
+      },
+      "cities:3" : {
+        "offset" : 5019411,
+        "count" : 117615
+      }
     }
   }
 }
