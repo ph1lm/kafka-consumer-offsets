@@ -10,6 +10,8 @@ import kafka.consumer.BaseConsumerRecord;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -20,6 +22,7 @@ import java.util.function.BiFunction;
 
 public class MirrorStateStore {
 
+  private static final Logger LOG = LoggerFactory.getLogger(MirrorStateStore.class);
   private static volatile MirrorStateStore instance = new MirrorStateStore();
   private final AtomicReference<MirrorBreakerMode> mode;
   private final AtomicReference<HandlerState> state;
@@ -58,7 +61,7 @@ public class MirrorStateStore {
   public void dumpProgress() {
     try {
       ProgressStatistic progressStatistic = getProgress();
-      System.out.println(JsonSerializer.OBJECT_MAPPER.getInstance()
+      LOG.warn(JsonSerializer.OBJECT_MAPPER.getInstance()
           .writerWithDefaultPrettyPrinter()
           .writeValueAsString(progressStatistic));
     } catch (JsonProcessingException e) {
