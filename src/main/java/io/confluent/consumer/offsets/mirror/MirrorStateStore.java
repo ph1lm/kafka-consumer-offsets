@@ -1,8 +1,19 @@
 package io.confluent.consumer.offsets.mirror;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableSortedMap;
+import io.confluent.consumer.offsets.mirror.common.JsonSerializer;
 import kafka.consumer.BaseConsumerRecord;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +22,7 @@ import java.util.function.BiFunction;
 
 public class MirrorStateStore {
 
+  private static final Logger LOG = LoggerFactory.getLogger(MirrorStateStore.class);
   private static volatile MirrorStateStore instance = new MirrorStateStore();
   private final AtomicReference<MirrorBreakerMode> mode;
   private final AtomicReference<HandlerState> state;
@@ -46,8 +58,19 @@ public class MirrorStateStore {
     return this.state.get();
   }
 
-  public Map getProgress() {
-    return ImmutableSortedMap.copyOf(this.progress, (thisKey, thatKey) -> {
+  public void dumpProgress() {
+    try {
+      ProgressStatistic progressStatistic = getProgress();
+      LOG.warn(JsonSerializer.OBJECT_MAPPER.getInstance()
+          .writerWithDefaultPrettyPrinter()
+          .writeValueAsString(progressStatistic));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
+  }
+
+  public ProgressStatistic getProgress() {
+    return new ProgressStatistic(ImmutableSortedMap.copyOf(this.progress, (thisKey, thatKey) -> {
       if (thisKey.getTopic() != thatKey.getTopic()) {
         if (thisKey.getTopic().compareTo(thatKey.getTopic()) < 0) {
           return -1;
@@ -56,7 +79,7 @@ public class MirrorStateStore {
         }
       }
       return Integer.compare(thisKey.getPartition(), thatKey.getPartition());
-    });
+    }));
   }
 
   class OnMessage implements BiFunction<ProgressKey, ProgressValue, ProgressValue> {
@@ -78,6 +101,25 @@ public class MirrorStateStore {
       value.incrementCount();
       value.setOffset(this.offset);
       return value;
+    }
+  }
+
+  @Getter
+  @Setter
+  @AllArgsConstructor
+  public static class ProgressStatistic {
+    @JsonSerialize(keyUsing = ProgressKeySerializer.class)
+    private Map<ProgressKey, ProgressValue> progress;
+  }
+
+  public static class ProgressKeySerializer extends com.fasterxml.jackson.databind.JsonSerializer<ProgressKey> {
+
+    @Override
+    public void serialize(ProgressKey value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+      gen.writeFieldName(new StringBuilder().append(value.getTopic())
+          .append(":")
+          .append(value.getPartition())
+          .toString());
     }
   }
 }

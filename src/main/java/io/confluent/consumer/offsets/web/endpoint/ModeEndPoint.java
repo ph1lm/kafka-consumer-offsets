@@ -3,7 +3,7 @@ package io.confluent.consumer.offsets.web.endpoint;
 import com.sun.net.httpserver.HttpExchange;
 import io.confluent.consumer.offsets.mirror.MirrorBreakerMode;
 import io.confluent.consumer.offsets.mirror.MirrorStateStore;
-import io.confluent.consumer.offsets.web.BaseHttpHandler;
+import io.confluent.consumer.offsets.mirror.common.JsonSerializer;
 import io.confluent.consumer.offsets.web.HandlerEndPoint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +28,8 @@ public class ModeEndPoint implements HandlerEndPoint {
   @Override
   public Object processPostRequest(HttpExchange httpExchange) {
     try {
-      Mode mode = BaseHttpHandler.OBJECT_MAPPER.readValue(httpExchange.getRequestBody(), Mode.class);
+      Mode mode = JsonSerializer.OBJECT_MAPPER
+          .getInstance().readValue(httpExchange.getRequestBody(), Mode.class);
       MirrorStateStore.getInstance().switchModeTo(mode.getMode());
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage(), e);
