@@ -1,9 +1,9 @@
 package io.confluent.consumer.offsets.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import io.confluent.consumer.offsets.mirror.common.JsonSerializer;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 
 public class BaseHttpHandler implements HttpHandler {
-  public final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final Logger LOG = LoggerFactory.getLogger(BaseHttpHandler.class);
   private final HandlerEndPoint endPoint;
 
@@ -30,7 +29,7 @@ public class BaseHttpHandler implements HttpHandler {
   public void handle(HttpExchange httpExchange) throws IOException {
     final OutputStream outputStream = httpExchange.getResponseBody();
     final Response response = processRequest(httpExchange);
-    final String responseBody = OBJECT_MAPPER
+    final String responseBody = JsonSerializer.OBJECT_MAPPER.getInstance()
         .writerWithDefaultPrettyPrinter()
         .writeValueAsString(response.getBody());
     httpExchange.sendResponseHeaders(response.getStatus(), responseBody.length());
@@ -41,7 +40,6 @@ public class BaseHttpHandler implements HttpHandler {
   private Response processRequest(HttpExchange httpExchange) {
     final Response response = new Response();
     try {
-
       response.setBody(ResponseWrapper
           .create(pushToEndPoint(httpExchange)));
       response.setStatus(HttpURLConnection.HTTP_OK);
