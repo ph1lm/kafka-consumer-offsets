@@ -29,12 +29,12 @@ public class TestConsumer {
 
     Processor<String, String> processor
         = new CompositeProcessor.Builder<String, String>()
-        .process(new LoggingProcessor<String, String>())
+        .process(new LoggingProcessor<>())
         .build();
 
     Blacklist<String, String> blacklist
         = new CompositeBlacklist.Builder<String, String>()
-        .ignore(new IgnoreNothingBlacklist<String, String>())
+        .ignore(new IgnoreNothingBlacklist<>())
         .build();
 
     Converter<String, String, String, String> converter = new IdentityConverter<>();
@@ -43,12 +43,7 @@ public class TestConsumer {
         properties, processor, blacklist, converter, topic, false, Integer.MAX_VALUE,
         30);
 
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        consumerLoop.stop();
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(consumerLoop::stop));
 
     Thread thread = new Thread(consumerLoop);
     thread.start();

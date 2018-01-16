@@ -77,7 +77,7 @@ public class ConsumerOffsetsRestorer {
 
     Processor<GroupTopicPartition, Long> processor
         = new CompositeProcessor.Builder<GroupTopicPartition, Long>()
-          .process(new LoggingProcessor<GroupTopicPartition, Long>())
+          .process(new LoggingProcessor<>())
           .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
               new GroupNameFunction(), new ThreadLocalProcessor<>(
               new OffsetsRestoreProcessor.Builder().withProperties(consumerProperties))))
@@ -87,15 +87,10 @@ public class ConsumerOffsetsRestorer {
 
     final ConsumerLoop<String, String, GroupTopicPartition, Long> consumerLoop =
         new ConsumerLoop<>(consumerProperties, processor,
-            new IgnoreNothingBlacklist<GroupTopicPartition, Long>(), restorerConverter, options.valueOf(sourceTopic),
+            new IgnoreNothingBlacklist<>(), restorerConverter, options.valueOf(sourceTopic),
               options.has(fromBeginning), options.valueOf(pollTimeoutMs), options.valueOf(idleStateTimeoutSecs));
 
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        consumerLoop.stop();
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(consumerLoop::stop));
 
     Thread thread = new Thread(consumerLoop);
     thread.start();
