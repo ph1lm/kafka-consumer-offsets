@@ -22,12 +22,12 @@ public class TopicListProcessor implements Processor<GroupTopicPartition, Long> 
   @Override
   public void close() {
     LOG.warn("Groups:");
-    for (String group : this.groupTopic.keys()) {
+    for (String group : this.groupTopic.keySet()) {
       LOG.warn(group);
     }
 
     LOG.warn("Topics:");
-    for (String topic : this.topicGroup.keys()) {
+    for (String topic : this.topicGroup.keySet()) {
       LOG.warn(topic);
     }
   }
