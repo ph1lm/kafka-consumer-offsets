@@ -5,14 +5,11 @@ public class ThreadLocalProcessor<K, V> implements Processor<K, V> {
   private final ThreadLocal<Processor<K, V>> threadLocalDelegate;
 
   public ThreadLocalProcessor(final ProcessorBuilder<K, V> builder) {
-    this.threadLocalDelegate = new ThreadLocal<Processor<K, V>>() {
-      @Override
-      protected Processor<K, V> initialValue() {
-        synchronized (builder) {
-          return builder.build();
-        }
+    this.threadLocalDelegate = ThreadLocal.withInitial(() -> {
+      synchronized (builder) {
+        return builder.build();
       }
-    };
+    });
   }
 
   @Override

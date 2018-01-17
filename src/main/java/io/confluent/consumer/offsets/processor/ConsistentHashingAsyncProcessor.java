@@ -30,21 +30,18 @@ public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
 
   private ExecutorService createExecutorService() {
     return new ThreadPoolExecutor(1, 1,
-        0L, TimeUnit.MILLISECONDS, new LimitedQueue<Runnable>(QUEUE_MAX_SIZE));
+        0L, TimeUnit.MILLISECONDS, new LimitedQueue<>(QUEUE_MAX_SIZE));
   }
 
   @Override
   public void process(final K key, final V value) {
     Object newKey = this.keyConverter.apply(key);
     int executorIndex = Math.abs(newKey.hashCode()) % this.executors.length;
-    this.executors[executorIndex].execute(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          ConsistentHashingAsyncProcessor.this.delegate.process(key, value);
-        } catch (Exception e) {
-          LOG.error("Error while processing: " + key + " = " + value, e);
-        }
+    this.executors[executorIndex].execute(() -> {
+      try {
+        ConsistentHashingAsyncProcessor.this.delegate.process(key, value);
+      } catch (Exception e) {
+        LOG.error("Error while processing: " + key + " = " + value, e);
       }
     });
   }
@@ -54,14 +51,11 @@ public class ConsistentHashingAsyncProcessor<K, V> implements Processor<K, V> {
     LOG.debug("Submitting close for {} executors", this.executors.length);
     for (ExecutorService executor : this.executors) {
       LOG.debug("Submitting close for executor {}...", executor);
-      executor.submit(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            ConsistentHashingAsyncProcessor.this.delegate.close();
-          } catch (Exception e) {
-            LOG.error("Error while closing", e);
-          }
+      executor.submit(() -> {
+        try {
+          ConsistentHashingAsyncProcessor.this.delegate.close();
+        } catch (Exception e) {
+          LOG.error("Error while closing", e);
         }
       });
     }

@@ -42,7 +42,7 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
                       boolean fromBeginning,
                       long pollTimeoutMs,
                       long idleStateTimeoutSecs) {
-    this(new KafkaConsumer<IK, IV>(properties), processor, blacklist, converter, topic, fromBeginning, pollTimeoutMs,
+    this(new KafkaConsumer<>(properties), processor, blacklist, converter, topic, fromBeginning, pollTimeoutMs,
         idleStateTimeoutSecs);
   }
 
@@ -107,12 +107,9 @@ public class ConsumerLoop<IK, IV, OK, OV> implements Runnable {
 
   private void initIdleState() {
     if (this.idleStateCondition != null) {
-      this.idleStateCondition.async(new Runnable() {
-        @Override
-        public void run() {
-          LOG.info("Idle state occurred");
-          ConsumerLoop.this.stop();
-        }
+      this.idleStateCondition.async(() -> {
+        LOG.info("Idle state occurred");
+        ConsumerLoop.this.stop();
       });
     }
   }

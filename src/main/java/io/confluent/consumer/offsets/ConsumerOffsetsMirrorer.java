@@ -104,9 +104,9 @@ public class ConsumerOffsetsMirrorer {
 
     Processor<GroupTopicPartition, OffsetAndMetadata> processor
         = new CompositeProcessor.Builder<GroupTopicPartition, OffsetAndMetadata>()
-            .process(new NewGroupLoggingAlsoProcessor<OffsetAndMetadata>())
+            .process(new NewGroupLoggingAlsoProcessor<>())
             .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
-                new IdentityFunction<GroupTopicPartition>(),
+                new IdentityFunction<>(),
                 new ThreadLocalProcessor<>(new OffsetsSinkProcessor.Builder()
                     .withProperties(producerProperties)
                     .withTopic(options.valueOf(targetTopic)))))
@@ -118,9 +118,9 @@ public class ConsumerOffsetsMirrorer {
           .ignore(new GroupRegexpBlacklist("console-consumer.*")) // ignore all console consumers
           .ignore(new TopicRegexpBlacklist("_.*")) // ignore system topics
           .ignore(options.has(groupBlackList) ? new GroupRegexpBlacklist(options.valueOf(groupBlackList)) :
-              new IgnoreNothingBlacklist<GroupTopicPartition, OffsetAndMetadata>())
+              new IgnoreNothingBlacklist<>())
           .ignore(options.has(topicBlackList) ? new TopicRegexpBlacklist(options.valueOf(topicBlackList)) :
-              new IgnoreNothingBlacklist<GroupTopicPartition, OffsetAndMetadata>())
+              new IgnoreNothingBlacklist<>())
           .build();
 
     Converter<Bytes, Bytes, GroupTopicPartition, OffsetAndMetadata> converter =
@@ -131,12 +131,7 @@ public class ConsumerOffsetsMirrorer {
             options.valueOf(sourceTopic), options.has(fromBeginning), options.valueOf(pollTimeoutMs),
               options.valueOf(idleStateTimeoutSecs));
 
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        consumerLoop.stop();
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(consumerLoop::stop));
 
     Thread thread = new Thread(consumerLoop);
     thread.start();

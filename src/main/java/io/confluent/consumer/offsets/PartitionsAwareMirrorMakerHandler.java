@@ -19,9 +19,10 @@ public class PartitionsAwareMirrorMakerHandler implements MirrorMaker.MirrorMake
   public PartitionsAwareMirrorMakerHandler() {
     final EmbeddedWebServer embeddedWebServer = new EmbeddedWebServer();
     embeddedWebServer.start();
+    this.mirrorStateStore = MirrorStateStore.getInstance();
     this.mirroringBreaker = new MirrorBreaker();
     this.mirroringBreaker.schedule();
-    this.mirrorStateStore = MirrorStateStore.getInstance();
+    Runtime.getRuntime().addShutdownHook(new Thread(PartitionsAwareMirrorMakerHandler.this.mirrorStateStore::dumpProgress));
   }
 
   @Override

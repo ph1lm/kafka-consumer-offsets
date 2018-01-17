@@ -6,7 +6,6 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,12 +16,9 @@ public class OffsetsSinkProcessor implements Processor<GroupTopicPartition, Offs
 
   private static final Logger LOG = LoggerFactory.getLogger(OffsetsSinkProcessor.class);
   private static final String OFFSET_KEY_FORMAT = "%s/%s/%d";
-  private static final Callback LOGGING_CALLBACK = new Callback() {
-    @Override
-    public void onCompletion(RecordMetadata metadata, Exception exception) {
-      if (exception != null) {
-        LOG.error("Error while sinking", exception);
-      }
+  private static final Callback LOGGING_CALLBACK = (metadata, exception) -> {
+    if (exception != null) {
+      LOG.error("Error while sinking", exception);
     }
   };
 

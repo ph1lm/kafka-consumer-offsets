@@ -3,13 +3,10 @@ package io.confluent.consumer.offsets;
 import io.confluent.consumer.offsets.blacklist.IgnoreNothingBlacklist;
 import io.confluent.consumer.offsets.converter.Converter;
 import io.confluent.consumer.offsets.converter.RestorerConverter;
-import io.confluent.consumer.offsets.function.GroupNameFunction;
-import io.confluent.consumer.offsets.processor.ConsistentHashingAsyncProcessor;
-import io.confluent.consumer.offsets.processor.Processor;
-import io.confluent.consumer.offsets.processor.LoggingProcessor;
 import io.confluent.consumer.offsets.processor.CompositeProcessor;
-import io.confluent.consumer.offsets.processor.OffsetsRestoreProcessor;
-import io.confluent.consumer.offsets.processor.ThreadLocalProcessor;
+import io.confluent.consumer.offsets.processor.LoggingProcessor;
+import io.confluent.consumer.offsets.processor.Processor;
+import io.confluent.consumer.offsets.processor.TopicListProcessor;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -23,7 +20,7 @@ import java.util.Properties;
 import static java.lang.String.format;
 import static java.lang.System.exit;
 
-public class ConsumerOffsetsRestorer {
+public class ConsumerOffsetsTopicLister {
 
   public static void main(String[] args) throws Exception {
     OptionParser parser = new OptionParser();
@@ -36,11 +33,6 @@ public class ConsumerOffsetsRestorer {
         .withRequiredArg()
         .ofType(String.class)
         .defaultsTo("replica_consumer_offsets");
-    OptionSpec<Integer> numberOfThreads = parser.accepts("num.threads",
-        "Number of production threads.")
-        .withRequiredArg()
-        .ofType(Integer.class)
-        .defaultsTo(10);
     OptionSpec fromBeginning = parser.accepts("from-beginning",
         "Start consumption from the beginning of a topic.");
     OptionSpec<Integer> pollTimeoutMs = parser.accepts("poll-timeout-ms",
@@ -78,9 +70,7 @@ public class ConsumerOffsetsRestorer {
     Processor<GroupTopicPartition, Long> processor
         = new CompositeProcessor.Builder<GroupTopicPartition, Long>()
           .process(new LoggingProcessor<>())
-          .process(new ConsistentHashingAsyncProcessor<>(options.valueOf(numberOfThreads),
-              new GroupNameFunction(), new ThreadLocalProcessor<>(
-              new OffsetsRestoreProcessor.Builder().withProperties(consumerProperties))))
+          .process(new TopicListProcessor())
           .build();
 
     Converter<String, String, GroupTopicPartition, Long> restorerConverter = new RestorerConverter();
