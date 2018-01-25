@@ -249,3 +249,41 @@ curl -H "Content-Type: application/json" -X POST -d '{"mode":"DAEMON"}' http://l
   "content" : "Success"
 }
 ```
+
+##### Meter statistic
+```bash
+GET http://hostname:[port]/mirror/maker/meter
+```
+##### Example
+
+###### Request
+```bash
+curl -i -H "Accept: appliation/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/maker/meter
+```
+
+###### Response
+```
+HTTP/1.1 200 OK
+Date: Thu, 25 Jan 2018 15:09:07 GMT
+Content-length: 182
+
+{
+  "content" : {
+    "count" : 2997371,
+    "mean_rate" : 61699.65,
+    "one_minute_rate" : 204497.5,
+    "five_minute_rate" : 335071.71,
+    "fifteen_minute_rate" : 363852.03
+  }
+}
+```
+
+## LOGGING
+###### Open file
+```bash
+<CONFLUENT_HOME>/etc/kafka/tools-log4j.properties
+```
+###### Add row
+```bash
+log4j.logger.io.confluent.consumer.offsets=DEBUG
+```
