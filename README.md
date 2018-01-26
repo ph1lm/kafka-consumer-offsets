@@ -58,6 +58,35 @@ done
  --message.handler io.confluent.consumer.offsets.PartitionsAwareMirrorMakerHandler \
  --whitelist ".*"
 ```
+
+##### Mirror breaker working mode
+```bash
+-Dmirror-breaker-working-mode - mirror breaker working mode, default value is NORMAL
+Available values: DAEMON, NORMAL
+```
+##### Example
+```
+./bin/kafka-run-class -Dmirror-breaker-working-mode=DAEMON kafka.tools.MirrorMaker \
+ --consumer.config ./etc/kafka/consumer.properties \
+ --producer.config ./etc/kafka/producer-m.properties \
+ --message.handler io.confluent.consumer.offsets.PartitionsAwareMirrorMakerHandler \
+ --whitelist ".*"
+```
+
+##### Console reporter period
+```bash
+-Dconsole-reporter-period-secs - default value is 60
+Available values: DAEMON, NORMAL
+```
+##### Example
+```
+./bin/kafka-run-class --Dconsole-reporter-period-secs=20 kafka.tools.MirrorMaker \
+ --consumer.config ./etc/kafka/consumer.properties \
+ --producer.config ./etc/kafka/producer-m.properties \
+ --message.handler io.confluent.consumer.offsets.PartitionsAwareMirrorMakerHandler \
+ --whitelist ".*"
+```
+
 ## Mirroring control
 ##### Progress tracking
 ```bash
@@ -250,7 +279,7 @@ curl -H "Content-Type: application/json" -X POST -d '{"mode":"DAEMON"}' http://l
 }
 ```
 
-##### Meter statistic
+##### Metrics
 ```bash
 GET http://hostname:[port]/mirror/maker/meter
 ```
@@ -258,7 +287,7 @@ GET http://hostname:[port]/mirror/maker/meter
 
 ###### Request
 ```bash
-curl -i -H "Accept: appliation/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/maker/meter
+curl -i -H "Accept: appliation/json" -H "Contnt-Type: application/json" -X GET http://localhost:3131/mirror/metrics
 ```
 
 ###### Response
@@ -275,6 +304,80 @@ Content-length: 182
     "five_minute_rate" : 335071.71,
     "fifteen_minute_rate" : 363852.03
   }
+}
+```
+
+##### Console reporter
+```bash
+POST http://hostname:[port]/mirror/metrics/console
+```
+##### Example
+
+###### Enable Request
+```bash
+curl -H "Content-Type: application/json" -X POST -d '{"enabled":"true"}' http://localhost:3131/mirror/metrics/console
+
+```
+###### Response
+```
+HTTP/1.1 200 OK
+Date: Thu, 25 Jan 2018 15:09:07 GMT
+Content-length: 182
+
+{
+  "content" : "Success"
+}
+```
+###### Disable Request
+```bash
+curl -H "Content-Type: application/json" -X POST -d '{"enabled":"false"}' http://localhost:3131/mirror/metrics/console
+
+```
+###### Response
+```
+HTTP/1.1 200 OK
+Date: Thu, 25 Jan 2018 15:09:07 GMT
+Content-length: 182
+
+{
+  "content" : "Success"
+}
+```
+
+##### JMX reporter
+```bash
+POST http://hostname:[port]/mirror/metrics/jmx
+```
+##### Example
+
+###### Enable Request
+```bash
+curl -H "Content-Type: application/json" -X POST -d '{"enabled":"true"}' http://localhost:3131/mirror/metrics/jmx
+
+```
+###### Response
+```
+HTTP/1.1 200 OK
+Date: Thu, 25 Jan 2018 15:09:07 GMT
+Content-length: 182
+
+{
+  "content" : "Success"
+}
+```
+###### Disable Request
+```bash
+curl -H "Content-Type: application/json" -X POST -d '{"enabled":"false"}' http://localhost:3131/mirror/metrics/jmx
+
+```
+###### Response
+```
+HTTP/1.1 200 OK
+Date: Thu, 25 Jan 2018 15:09:07 GMT
+Content-length: 182
+
+{
+  "content" : "Success"
 }
 ```
 
