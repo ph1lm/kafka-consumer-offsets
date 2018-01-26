@@ -245,7 +245,7 @@ NORMAL - The system will be shutted down after an idle state timeout
 
 ###### Request
 ```bash
-curl -i -H "Accept: appliation/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/breaker
+curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/breaker
 ```
 
 ###### Response
@@ -287,7 +287,7 @@ GET http://hostname:[port]/mirror/maker/meter
 
 ###### Request
 ```bash
-curl -i -H "Accept: appliation/json" -H "Contnt-Type: application/json" -X GET http://localhost:3131/mirror/metrics
+curl -i -H "Accept: application/json" -H "Contnt-Type: application/json" -X GET http://localhost:3131/mirror/metrics
 ```
 
 ###### Response
