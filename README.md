@@ -287,7 +287,7 @@ GET http://hostname:[port]/mirror/maker/meter
 
 ###### Request
 ```bash
-curl -i -H "Accept: application/json" -H "Contnt-Type: application/json" -X GET http://localhost:3131/mirror/metrics
+curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/metrics
 ```
 
 ###### Response
