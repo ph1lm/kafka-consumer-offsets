@@ -1,9 +1,8 @@
 package io.confluent.consumer.offsets.web;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import io.confluent.consumer.offsets.mirror.common.JsonSerializer;
+import io.confluent.consumer.offsets.web.common.JsonSerializer;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -56,7 +55,7 @@ public class BaseHttpHandler implements HttpHandler {
     return response;
   }
 
-  private Object pushToEndPoint(HttpExchange httpExchange) throws JsonProcessingException {
+  private Object pushToEndPoint(HttpExchange httpExchange) {
     switch (httpExchange.getRequestMethod()) {
       case HandlerEndPoint.GET_REQUEST_METHOD:
         return this.endPoint.processGetRequest(httpExchange);

@@ -9,24 +9,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @Getter
-public class ProgressKey implements Comparable<ProgressKey> {
+public class ProgressKey {
   private String topic;
   private int partition;
-
-
-  @Override
-  public int compareTo(ProgressKey that) {
-    if (this.topic.compareTo(that.topic) < 0) {
-      return -1;
-    } else if (this.topic.compareTo(that.topic) > 0) {
-      return 1;
-    }
-
-    if (this.partition < that.partition) {
-      return -1;
-    } else if (this.partition > that.partition) {
-      return 1;
-    }
-    return 0;
-  }
 }

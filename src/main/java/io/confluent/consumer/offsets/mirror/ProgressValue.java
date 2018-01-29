@@ -5,22 +5,20 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 @AllArgsConstructor
 @ToString
 @Getter
 @Setter
 public class ProgressValue {
   private long offset;
-  private final AtomicInteger count;
+  private long count;
 
   public ProgressValue() {
     this.offset = 0L;
-    this.count = new AtomicInteger(0);
+    this.count = 0L;
   }
 
   public void incrementCount() {
-    this.count.incrementAndGet();
+    this.count++;
   }
 }

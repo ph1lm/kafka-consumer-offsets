@@ -1,8 +1,8 @@
 package io.confluent.consumer.offsets;
 
-import io.confluent.consumer.offsets.mirror.MirrorBreaker;
-import io.confluent.consumer.offsets.mirror.MirrorStateStore;
-import io.confluent.consumer.offsets.web.EmbeddedWebServer;
+import io.confluent.consumer.offsets.mirror.MirrorMakerHandlerContext;
+import io.confluent.consumer.offsets.mirror.infrastructure.EventTopic;
+import io.confluent.consumer.offsets.mirror.infrastructure.Subject;
 import kafka.consumer.BaseConsumerRecord;
 import kafka.tools.MirrorMaker;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -13,24 +13,21 @@ import java.util.List;
 
 public class PartitionsAwareMirrorMakerHandler implements MirrorMaker.MirrorMakerMessageHandler {
 
-  private final MirrorBreaker mirroringBreaker;
-  private final MirrorStateStore mirrorStateStore;
+  private final EventTopic<BaseConsumerRecord> topic;
 
   public PartitionsAwareMirrorMakerHandler() {
-    final EmbeddedWebServer embeddedWebServer = new EmbeddedWebServer();
-    embeddedWebServer.start();
-    this.mirrorStateStore = MirrorStateStore.getInstance();
-    this.mirroringBreaker = new MirrorBreaker();
-    this.mirroringBreaker.schedule();
-    Runtime.getRuntime().addShutdownHook(new Thread(PartitionsAwareMirrorMakerHandler.this.mirrorStateStore::dumpProgress));
+    MirrorMakerHandlerContext context = MirrorMakerHandlerContext.getInstance();
+    context.injectProperties();
+    context.start();
+    this.topic = context.getProcessedRecordsTopic();
   }
 
   @Override
   public List<ProducerRecord<byte[], byte[]>> handle(BaseConsumerRecord record) {
 
-    this.mirroringBreaker.postpone();
-    this.mirrorStateStore.put(record);
+    this.topic.publishEvent(new Subject<>(record));
     Long timestamp = record.timestamp() == Record.NO_TIMESTAMP ? null : record.timestamp();
+
     return Collections.singletonList(new ProducerRecord<>(record.topic(), record.partition(), timestamp,
         record.key(), record.value()));
   }

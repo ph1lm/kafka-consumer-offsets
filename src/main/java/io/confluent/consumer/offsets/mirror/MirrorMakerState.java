@@ -1,6 +1,6 @@
 package io.confluent.consumer.offsets.mirror;
 
-public enum HandlerState {
+public enum MirrorMakerState {
   WAITING,
   RUNNING
 }
