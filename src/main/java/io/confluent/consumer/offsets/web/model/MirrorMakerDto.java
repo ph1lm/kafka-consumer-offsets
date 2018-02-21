@@ -2,25 +2,21 @@ package io.confluent.consumer.offsets.web.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.confluent.consumer.offsets.mirror.MirrorMakerState;
-import io.confluent.consumer.offsets.mirror.entity.MirrorMakerStats;
+import io.confluent.consumer.offsets.mirror.entity.MirrorMaker;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Map;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MirrorMakerStatsDto {
-  private Map<String, Long> stats;
+public class MirrorMakerDto {
   @JsonProperty("state")
   private MirrorMakerState mirrorMakerState;
 
-  public MirrorMakerStatsDto(MirrorMakerStats mirrorMaker) {
-    this.stats = mirrorMaker.getStats();
+  public MirrorMakerDto(MirrorMaker mirrorMaker) {
     this.mirrorMakerState = mirrorMaker.getMirrorMakerState();
   }
 }

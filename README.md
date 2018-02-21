@@ -88,10 +88,9 @@ Available values: DAEMON, NORMAL
 ```
 
 ## Mirroring control
-##### Progress tracking
+##### Mirror maker state tracking
 ```bash
-GET http://hostname:[port]/mirror/maker - provides overall progress report per topic and current mirroring state
-State can obtain two values
+GET http://hostname:[port]/mirror/maker - provides current mirror maker state
 RUNNING - at least one message was received during the time period that equals to <idle-state-timeout-secs>
 WAITING - no messages were received during the time period that equals to <idle-state-timeout-secs>
 ```
@@ -105,23 +104,78 @@ curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X GET
 ###### Response
 ```bash
 HTTP/1.1 200 OK
-Date: Tue, 23 Jan 2018 11:19:40 GMT
-Content-length: 187
+Date: Wed, 21 Feb 2018 14:21:59 GMT
+Content-length: 47
 
 {
   "content" : {
-    "progress" : {
-      "animals" : 1781522,
-      "cities" : 875167,
-      "tusers" : 2140138
-    },
-    "state" : "RUNNING",
-    "total_count" : 4794799
+    "state" : "WAITING"
   }
 }
 ```
+##### Progress tracking
+```bash
+GET http://hostname:[port]/mirror/maker/counts - provides overall progress report per topic
+```
+##### Example
 
-##### All Topic progress tracking
+###### Request
+```bash
+curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/maker/counts
+```
+
+###### Response
+```bash
+HTTP/1.1 200 OK
+Date: Wed, 21 Feb 2018 14:23:45 GMT
+Content-length: 179
+
+{
+  "content" : [ {
+    "topic" : "cities",
+    "counts" : 140951
+  }, {
+    "topic" : "animals",
+    "counts" : 312088
+  }, {
+    "topic" : "users",
+    "counts" : 339791
+  } ]
+}
+```
+
+##### Timestamps tracking
+```bash
+GET http://hostname:[port]/mirror/maker/timestamps - provides timestamps of last received record per topic
+```
+##### Example
+
+###### Request
+```bash
+curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X GET http://localhost:3131/mirror/maker/timestamps
+```
+
+###### Response
+```bash
+HTTP/1.1 200 OK
+Date: Wed, 21 Feb 2018 14:27:02 GMT
+Content-length: 245
+
+{
+  "content" : [ {
+    "topic" : "users",
+    "timestamp" : "2018-02-21 21:14:26 747"
+  }, {
+    "topic" : "animals",
+    "timestamp" : "2018-02-21 21:14:26 260"
+  }, {
+    "topic" : "cities",
+    "timestamp" : "2018-02-21 21:14:27 530"
+  } ]
+}
+```
+
+##### All Topic detailed progress tracking
 ```bash
 GET http://hostname:[port]/mirror/maker/topics - provides current message processing state for each topic/partition
 ```
@@ -281,7 +335,7 @@ curl -H "Content-Type: application/json" -X POST -d '{"mode":"DAEMON"}' http://l
 
 ##### Metrics
 ```bash
-GET http://hostname:[port]/mirror/maker/meter
+GET http://hostname:[port]/mirror/metrics
 ```
 ##### Example
 

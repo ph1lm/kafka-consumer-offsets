@@ -1,32 +1,28 @@
 package io.confluent.consumer.offsets.mirror.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
-@Builder
+@lombok.Builder
 public class TopicStats implements Comparable<TopicStats> {
   private String name;
   private int partition;
   private long offset;
   private long count;
+  private Date date;
 
   @Override
   public int compareTo(TopicStats that) {
-    if (this.name.compareTo(that.getName()) < 0) {
-      return -1;
-    } else if (this.name.compareTo(that.getName()) > 0) {
-      return 1;
-    }
-
-    if (this.partition < that.getPartition()) {
-      return -1;
-    } else if (this.partition > that.getPartition()) {
-      return 1;
-    }
-    return 0;
+    return this.date.compareTo(that.getDate());
   }
 }

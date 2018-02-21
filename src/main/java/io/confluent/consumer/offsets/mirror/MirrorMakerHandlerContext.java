@@ -9,6 +9,7 @@ import io.confluent.consumer.offsets.mirror.infrastructure.MirrorHandlerProperti
 import io.confluent.consumer.offsets.mirror.infrastructure.ProcessedRecordsTopic;
 import io.confluent.consumer.offsets.mirror.tool.ConsoleMetricsReporter;
 import io.confluent.consumer.offsets.mirror.tool.JmxMetricsReporter;
+import io.confluent.consumer.offsets.mirror.tool.TimestampsLogger;
 import io.confluent.consumer.offsets.web.EmbeddedWebServer;
 import io.confluent.consumer.offsets.web.common.EndPointsBuilder;
 import kafka.consumer.BaseConsumerRecord;
@@ -28,10 +29,7 @@ public class MirrorMakerHandlerContext {
   private final JmxMetricsReporter jmxMetricsReporter;
   private final MirrorHandlerProperties properties;
   private final MetricRegistry metricRegistry;
-
-  public static MirrorMakerHandlerContext getInstance() {
-    return INSTANCE;
-  }
+  private final TimestampsLogger timestampsLogger;
 
   private MirrorMakerHandlerContext() {
     this.webServer = new EmbeddedWebServer();
@@ -43,8 +41,12 @@ public class MirrorMakerHandlerContext {
     this.jmxMetricsReporter = new JmxMetricsReporter();
     this.metricRegistry = new MetricRegistry();
     this.properties = new MirrorHandlerProperties();
+    this.timestampsLogger = new TimestampsLogger();
   }
 
+  public static MirrorMakerHandlerContext getInstance() {
+    return INSTANCE;
+  }
 
   public void injectProperties() {
     this.mirrorBreakerProcessor.setIdleStateCondition(new IdleStateCondition(this.properties.getIdleStateTimeoutSecs()));
@@ -63,10 +65,13 @@ public class MirrorMakerHandlerContext {
 
     this.webServer.registerEndPoints(new EndPointsBuilder().build());
     this.webServer.setSocketAddress(this.properties.getSocketAddress());
+
+    this.timestampsLogger.setPeriod(this.properties.getConsoleReporterPeriod());
   }
 
   public void start() {
     this.webServer.start();
     this.mirrorBreakerProcessor.schedule();
+    this.timestampsLogger.start();
   }
 }
