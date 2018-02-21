@@ -17,8 +17,6 @@ public class ProgressValue {
   private Date date;
 
   public ProgressValue() {
-    this.offset = 0L;
-    this.count = 0L;
     this.date = new Date();
   }
 
