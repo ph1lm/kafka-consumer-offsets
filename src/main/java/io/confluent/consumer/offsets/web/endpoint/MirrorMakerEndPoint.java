@@ -3,7 +3,7 @@ package io.confluent.consumer.offsets.web.endpoint;
 import com.sun.net.httpserver.HttpExchange;
 import io.confluent.consumer.offsets.mirror.service.MirrorMakerService;
 import io.confluent.consumer.offsets.web.HandlerEndPoint;
-import io.confluent.consumer.offsets.web.model.MirrorMakerStatsDto;
+import io.confluent.consumer.offsets.web.model.MirrorMakerDto;
 
 public class MirrorMakerEndPoint implements HandlerEndPoint {
   private static final String ENDPOINT_CONTEXT = "mirror/maker";
@@ -15,6 +15,6 @@ public class MirrorMakerEndPoint implements HandlerEndPoint {
 
   @Override
   public Object processGetRequest(HttpExchange parameters) {
-    return new MirrorMakerStatsDto(MirrorMakerService.getInstance().getMirrorMakerStats());
+    return new MirrorMakerDto(MirrorMakerService.getInstance().getMirrorMakerState());
   }
 }

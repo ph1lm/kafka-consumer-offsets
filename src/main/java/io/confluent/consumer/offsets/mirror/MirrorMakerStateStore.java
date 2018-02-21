@@ -5,6 +5,7 @@ import io.confluent.consumer.offsets.mirror.infrastructure.EventObserver;
 import io.confluent.consumer.offsets.mirror.infrastructure.Subject;
 import kafka.consumer.BaseConsumerRecord;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,6 +59,7 @@ public class MirrorMakerStateStore implements EventObserver<BaseConsumerRecord> 
     private ProgressValue recalculate(ProgressValue value) {
       value.incrementCount();
       value.setOffset(this.offset);
+      value.setDate(new Date());
       return value;
     }
   }

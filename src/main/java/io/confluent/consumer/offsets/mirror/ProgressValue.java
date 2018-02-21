@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Date;
+
 @AllArgsConstructor
 @ToString
 @Getter
@@ -12,10 +14,12 @@ import lombok.ToString;
 public class ProgressValue {
   private long offset;
   private long count;
+  private Date date;
 
   public ProgressValue() {
     this.offset = 0L;
     this.count = 0L;
+    this.date = new Date();
   }
 
   public void incrementCount() {
